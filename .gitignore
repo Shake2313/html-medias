@@ -1,0 +1,10 @@
+# Claude Code personal/local settings (not shared)
+.claude/settings.local.json
+
+# Generated output (e.g. Playwright screenshots)
+output/
+
+# OS / Google Drive clutter
+desktop.ini
+Thumbs.db
+.DS_Store

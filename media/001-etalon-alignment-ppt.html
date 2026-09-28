@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Etalon Alignment PPT</title>
+<style>
+  :root {
+    --ink: #172033;
+    --muted: #6a7282;
+    --line: #dce4ee;
+    --soft: #f6f9fc;
+    --cyan: #18b7c9;
+    --cyan-dark: #08798a;
+    --green: #22b36a;
+    --coral: #f06f5f;
+    --yellow: #f3be42;
+    --panel: rgba(255,255,255,0.92);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    min-height: 100vh;
+    background:
+      linear-gradient(180deg, #ffffff 0%, #f7fbff 58%, #eef7f9 100%);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0;
+    overflow: hidden;
+  }
+
+  button,
+  input,
+  textarea {
+    font: inherit;
+  }
+
+  .app {
+    width: 100%;
+    height: 100%;
+    min-height: 560px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 310px;
+    gap: 0;
+  }
+
+  .plot-side {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 26px 26px 22px;
+  }
+
+  .topbar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 22px;
+    align-items: start;
+    margin-bottom: 14px;
+  }
+
+  .phase {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--cyan-dark);
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 10px;
+  }
+
+  .phase-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--cyan);
+    box-shadow: 0 0 0 5px rgba(24,183,201,0.12);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 34px;
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: 0;
+  }
+
+  .note {
+    max-width: 780px;
+    margin: 11px 0 0;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 116px);
+    gap: 8px;
+  }
+
+  .metric {
+    min-height: 64px;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+  }
+
+  .metric-label {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .metric-value {
+    display: block;
+    font-variant-numeric: tabular-nums;
+    font-size: 20px;
+    line-height: 1;
+    font-weight: 800;
+  }
+
+  .metric-value.good {
+    color: var(--green);
+  }
+
+  .canvas-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 330px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.88);
+    overflow: hidden;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .side {
+    position: relative;
+    border-left: 1px solid var(--line);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.92), rgba(248,252,255,0.96));
+    padding: 26px 22px;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 18px;
+    overflow: hidden;
+  }
+
+  .mini-title {
+    margin: 0;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 700;
+  }
+
+  .etalon-stage {
+    position: relative;
+    min-height: 248px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background:
+      linear-gradient(180deg, #ffffff, #f7fbff);
+    overflow: hidden;
+  }
+
+  .beam {
+    position: absolute;
+    left: -24px;
+    right: -24px;
+    top: 50%;
+    height: 6px;
+    background: linear-gradient(90deg, transparent, rgba(24,183,201,0.08), rgba(24,183,201,0.62), rgba(34,179,106,0.58), transparent);
+    transform: translateY(-50%);
+    opacity: 0.72;
+  }
+
+  .beam::after {
+    content: "";
+    position: absolute;
+    right: 38px;
+    top: 50%;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 2px solid rgba(34,179,106,0.28);
+    transform: translateY(-50%) scale(var(--glow, 0.55));
+    opacity: var(--glow-alpha, 0.35);
+  }
+
+  .etalon {
+    position: relative;
+    width: 138px;
+    height: 164px;
+    transform: rotate(var(--tilt, -10deg));
+    transition: transform 260ms cubic-bezier(.2,.8,.2,1);
+    filter: drop-shadow(0 16px 24px rgba(31,60,82,0.16));
+  }
+
+  .etalon.shake {
+    animation: shake 220ms ease;
+  }
+
+  @keyframes shake {
+    0%, 100% { translate: 0 0; }
+    25% { translate: -4px 0; }
+    50% { translate: 4px 0; }
+    75% { translate: -2px 0; }
+  }
+
+  .plate {
+    position: absolute;
+    top: 8px;
+    width: 34px;
+    height: 148px;
+    border-radius: 8px;
+    background:
+      linear-gradient(90deg, #e8fbff, #ffffff 46%, #aeeef6);
+    border: 2px solid #82cfda;
+  }
+
+  .plate.left {
+    left: 22px;
+  }
+
+  .plate.right {
+    right: 22px;
+  }
+
+  .cavity {
+    position: absolute;
+    left: 55px;
+    right: 55px;
+    top: 22px;
+    bottom: 22px;
+    border-radius: 5px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(232,247,250,0.72));
+    border: 1px dashed rgba(8,121,138,0.32);
+  }
+
+  .face {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 66px;
+    height: 46px;
+    transform: translate(-50%, -50%);
+  }
+
+  .eye {
+    position: absolute;
+    top: 10px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ink);
+  }
+
+  .eye.left {
+    left: 15px;
+  }
+
+  .eye.right {
+    right: 15px;
+  }
+
+  .mouth {
+    position: absolute;
+    left: 50%;
+    top: 28px;
+    width: 28px;
+    height: 12px;
+    border: 3px solid var(--ink);
+    border-top: 0;
+    border-radius: 0 0 30px 30px;
+    transform: translateX(-50%) scaleY(var(--smile, -0.55));
+    transform-origin: center 4px;
+    transition: transform 220ms ease;
+  }
+
+  .thermo {
+    position: absolute;
+    right: 19px;
+    bottom: 20px;
+    width: 34px;
+    height: 92px;
+  }
+
+  .thermo-tube {
+    position: absolute;
+    left: 13px;
+    top: 4px;
+    width: 8px;
+    height: 72px;
+    border-radius: 10px;
+    border: 2px solid #b7c7d9;
+    background: #fff;
+    overflow: hidden;
+  }
+
+  .thermo-fill {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: var(--heat, 30%);
+    border-radius: 8px 8px 0 0;
+    background: linear-gradient(180deg, var(--coral), var(--yellow));
+    transition: height 220ms ease;
+  }
+
+  .thermo-bulb {
+    position: absolute;
+    left: 7px;
+    bottom: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid #b7c7d9;
+    background: radial-gradient(circle at 38% 34%, #fff8da, var(--yellow));
+  }
+
+  .resonance-badge {
+    position: absolute;
+    left: 16px;
+    top: 15px;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    font-size: 20px;
+    font-weight: 900;
+    color: #fff;
+    background: var(--coral);
+    transform: scale(var(--badge, 0.86));
+    opacity: var(--badge-alpha, 0.85);
+    box-shadow: 0 10px 18px rgba(240,111,95,0.2);
+    transition: transform 220ms ease, opacity 220ms ease, background 220ms ease;
+  }
+
+  .readout {
+    display: grid;
+    gap: 8px;
+  }
+
+  .bar {
+    display: grid;
+    grid-template-columns: 48px minmax(0, 1fr) 44px;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .track {
+    position: relative;
+    height: 8px;
+    border-radius: 8px;
+    background: #e8eef5;
+    overflow: hidden;
+  }
+
+  .fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--w, 0%);
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--cyan), var(--green));
+    transition: width 220ms ease;
+  }
+
+  .keys {
+    height: 74px;
+    display: grid;
+    grid-template-columns: repeat(2, 54px);
+    grid-template-rows: 46px;
+    gap: 10px;
+    justify-content: center;
+    align-content: center;
+  }
+
+  .key {
+    width: 54px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border: 1px solid #cad7e5;
+    border-radius: 8px;
+    background: #fff;
+    color: #7a8493;
+    font-size: 24px;
+    font-weight: 800;
+    box-shadow: inset 0 -2px 0 rgba(23,32,51,0.06);
+    transition: transform 140ms ease, border-color 140ms ease, color 140ms ease, background 140ms ease;
+  }
+
+  .key.up {
+    display: none;
+  }
+
+  .key.left {
+    grid-column: 1;
+  }
+
+  .key.down {
+    display: none;
+  }
+
+  .key.right {
+    grid-column: 2;
+  }
+
+  .key.active {
+    color: #fff;
+    border-color: var(--cyan);
+    background: linear-gradient(180deg, #31cad8, #16aabe);
+    transform: translateY(-2px);
+  }
+
+  .key.disabled {
+    opacity: 0.34;
+  }
+
+  .key.flash {
+    animation: keyFlash 180ms ease;
+  }
+
+  @keyframes keyFlash {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(2px); }
+  }
+
+  @media (max-width: 900px) {
+    body {
+      overflow: auto;
+    }
+
+    .app {
+      min-height: 760px;
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr auto;
+    }
+
+    .side {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      border-left: 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .etalon-stage {
+      min-height: 220px;
+    }
+
+    .readout {
+      align-content: end;
+    }
+
+    .keys {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .plot-side {
+      padding: 18px 16px 16px;
+    }
+
+    .topbar {
+      grid-template-columns: 1fr;
+    }
+
+    h1 {
+      font-size: 28px;
+    }
+
+    .metrics {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .metric {
+      min-height: 56px;
+      padding: 9px 8px;
+    }
+
+    .metric-value {
+      font-size: 16px;
+    }
+
+    .side {
+      padding: 16px;
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body tabindex="-1">
+  <main class="app" aria-label="Etalon alignment presentation media">
+    <section class="plot-side">
+      <div class="topbar">
+        <div>
+          <div class="phase"><span class="phase-dot"></span><span id="phaseText">00 / 복잡한 함수</span></div>
+          <h1 id="stageTitle">람다-온도 투과 지도</h1>
+          <p class="note" id="stageNote">T = T(&lambda;, T<sub>temp</sub>, &theta;). 전체 ridge를 먼저 본 뒤, 발표 흐름에서는 &theta; slice와 온도 slice만 따라간다.</p>
+        </div>
+
+        <div class="metrics" aria-label="Current state">
+          <div class="metric">
+            <span class="metric-label">&lambda;<sub>0</sub></span>
+            <span class="metric-value">795.000</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">&theta;</span>
+            <span class="metric-value" id="thetaValue">-0.42</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">Temp</span>
+            <span class="metric-value" id="tempValue">24.0</span>
+          </div>
+          <div class="metric">
+            <span class="metric-label">T</span>
+            <span class="metric-value" id="transValue">0.02</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="canvas-wrap">
+        <canvas id="plot" aria-label="Etalon transmission graph"></canvas>
+      </div>
+    </section>
+
+    <aside class="side">
+      <p class="mini-title">Etalon toy model</p>
+
+      <div class="etalon-stage">
+        <div class="beam"></div>
+        <div class="resonance-badge" id="badge">off</div>
+        <div class="etalon" id="etalon">
+          <div class="plate left"></div>
+          <div class="cavity"></div>
+          <div class="plate right"></div>
+          <div class="face">
+            <div class="eye left"></div>
+            <div class="eye right"></div>
+            <div class="mouth"></div>
+          </div>
+        </div>
+        <div class="thermo">
+          <div class="thermo-tube"><div class="thermo-fill"></div></div>
+          <div class="thermo-bulb"></div>
+        </div>
+      </div>
+
+      <div class="readout">
+        <div class="bar">
+          <span>&theta;</span>
+          <span class="track"><span class="fill" id="thetaBar"></span></span>
+          <span id="thetaState">bad</span>
+        </div>
+        <div class="bar">
+          <span>Temp</span>
+          <span class="track"><span class="fill" id="tempBar"></span></span>
+          <span id="tempState">cold</span>
+        </div>
+        <div class="bar">
+          <span>Match</span>
+          <span class="track"><span class="fill" id="matchBar"></span></span>
+          <span id="matchState">low</span>
+        </div>
+      </div>
+
+      <div class="keys" aria-label="Presentation arrow keys">
+        <div class="key left" data-key="ArrowLeft">&larr;</div>
+        <div class="key right" data-key="ArrowRight">&rarr;</div>
+      </div>
+    </aside>
+  </main>
+
+<script>
+(() => {
+  const canvas = document.getElementById("plot");
+  const ctx = canvas.getContext("2d");
+  const phaseText = document.getElementById("phaseText");
+  const stageTitle = document.getElementById("stageTitle");
+  const stageNote = document.getElementById("stageNote");
+  const thetaValue = document.getElementById("thetaValue");
+  const tempValue = document.getElementById("tempValue");
+  const transValue = document.getElementById("transValue");
+  const etalon = document.getElementById("etalon");
+  const badge = document.getElementById("badge");
+  const thetaBar = document.getElementById("thetaBar");
+  const tempBar = document.getElementById("tempBar");
+  const matchBar = document.getElementById("matchBar");
+  const thetaState = document.getElementById("thetaState");
+  const tempState = document.getElementById("tempState");
+  const matchState = document.getElementById("matchState");
+  const keyEls = Array.from(document.querySelectorAll(".key"));
+
+  const C = {
+    lambda0: 795.000,
+    lambdaMin: 794.920,
+    lambdaMax: 795.080,
+    tempMin: 20,
+    tempMax: 44,
+    tempStart: 24,
+    tempTarget: 32,
+    thetaMin: -0.5,
+    thetaMax: 0.5,
+    thetaViewMin: -1.05,
+    thetaViewMax: 1.05,
+    fsr: 0.052,
+    airyF: 135,
+    tempCoeff: -0.00425,
+    thetaCoeff: 0.32,
+    peakT: 0.90
+  };
+
+  const stages = [
+    {
+      phase: "00 / 복잡한 함수",
+      title: "람다-온도 투과 지도",
+      note: "T = T(\u03bb, Ttemp, \u03b8). 전체 ridge를 먼저 본 뒤, 발표 흐름에서는 \u03b8 slice와 온도 slice만 따라간다.",
+      mode: "heat"
+    },
+    {
+      phase: "01 / tilted etalon",
+      title: "기울어진 에탈론",
+      note: "처음에는 \u03b8가 벗어나 있다. 넓은 \u03b8 scan에 여러 peak가 보이고, 여기서 maximum 쌍을 찾아갈 준비를 한다.",
+      mode: "theta"
+    },
+    {
+      phase: "02 / tilt 기준점",
+      title: "\u03b8 = 0 기준점 찾기",
+      note: "가장 큰 local maxima 쌍 사이로 돌아오면 작은 중앙 peak가 보인다. 이 지점이 수직 기준점이다.",
+      mode: "theta"
+    },
+    {
+      phase: "03 / 온도 튜닝",
+      title: "작은 중앙 peak를 키우기",
+      note: "\u03b8 = 0 고정. 온도 변화가 같은 자리의 resonance 조건을 맞추며 작은 peak가 크게 자란다.",
+      mode: "theta"
+    },
+    {
+      phase: "04 / matched",
+      title: "최적 조건 도달",
+      note: "\u03b8 = 0, resonance matched. 발표 목표값으로 T \u2248 0.90.",
+      mode: "lambda"
+    }
+  ];
+
+  const slidePoses = [
+    { theta: -0.42, temp: C.tempStart },
+    { theta: -0.42, temp: C.tempStart },
+    { theta: 0, temp: C.tempStart },
+    { theta: 0, temp: C.tempTarget },
+    { theta: 0, temp: C.tempTarget }
+  ];
+
+  const state = {
+    stage: 0,
+    theta: -0.42,
+    temp: C.tempStart,
+    motion: {
+      fromTheta: -0.42,
+      fromTemp: C.tempStart,
+      toTheta: -0.42,
+      toTemp: C.tempStart,
+      started: 0,
+      duration: 900
+    },
+    w: 0,
+    h: 0,
+    dpr: 1
+  };
+
+  let heatCache = null;
+
+  function clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v));
+  }
+
+  function lerp(a, b, t) {
+    return a + (b - a) * t;
+  }
+
+  function smoothstep(edge0, edge1, x) {
+    const t = clamp((x - edge0) / (edge1 - edge0), 0, 1);
+    return t * t * (3 - 2 * t);
+  }
+
+  function easeInOutCubic(t) {
+    return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  }
+
+  function updateMotion(time) {
+    const m = state.motion;
+    const t = clamp((time - m.started) / m.duration, 0, 1);
+    const eased = easeInOutCubic(t);
+    state.theta = lerp(m.fromTheta, m.toTheta, eased);
+    state.temp = lerp(m.fromTemp, m.toTemp, eased);
+  }
+
+  function resonanceShift(temp, theta) {
+    return C.tempCoeff * (temp - C.tempTarget) - C.thetaCoeff * theta * theta;
+  }
+
+  function airyRaw(lambda, temp, theta) {
+    const center = C.lambda0 + resonanceShift(temp, theta);
+    const phase = Math.PI * (lambda - center) / C.fsr;
+    return 1 / (1 + C.airyF * Math.sin(phase) * Math.sin(phase));
+  }
+
+  function coupling(theta) {
+    const u = Math.abs(theta) / C.thetaMax;
+    return C.peakT * Math.exp(-0.95 * u * u);
+  }
+
+  function transmission(lambda, temp, theta, zeroMarker = false) {
+    const markerScale = zeroMarker === true ? 1 : Number(zeroMarker) || 0;
+    const base = coupling(theta) * airyRaw(lambda, temp, theta);
+    const marker = markerScale * 0.045 * Math.exp(-(theta * theta) / (2 * 0.035 * 0.035));
+    return clamp(base + marker, 0, 0.96);
+  }
+
+  function zeroMarkerStrength() {
+    if (stages[state.stage].mode !== "theta") return 0;
+    return clamp(Math.abs(state.temp - C.tempTarget) / Math.abs(C.tempStart - C.tempTarget), 0, 1);
+  }
+
+  function currentT() {
+    return transmission(C.lambda0, state.temp, state.theta, zeroMarkerStrength());
+  }
+
+  function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    state.dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    state.w = Math.max(360, rect.width);
+    state.h = Math.max(300, rect.height);
+    canvas.width = Math.round(state.w * state.dpr);
+    canvas.height = Math.round(state.h * state.dpr);
+    ctx.setTransform(state.dpr, 0, 0, state.dpr, 0, 0);
+    heatCache = null;
+  }
+
+  function mapX(v, min, max, area) {
+    return area.x + ((v - min) / (max - min)) * area.w;
+  }
+
+  function mapY(v, min, max, area) {
+    return area.y + area.h - ((v - min) / (max - min)) * area.h;
+  }
+
+  function colorHeat(v) {
+    const t = Math.pow(clamp(v / C.peakT, 0, 1), 0.5);
+    const stops = [
+      [0.0, [247, 251, 255]],
+      [0.35, [196, 239, 244]],
+      [0.72, [42, 190, 207]],
+      [1.0, [34, 179, 106]]
+    ];
+    let a = stops[0];
+    let b = stops[stops.length - 1];
+    for (let i = 0; i < stops.length - 1; i++) {
+      if (t >= stops[i][0] && t <= stops[i + 1][0]) {
+        a = stops[i];
+        b = stops[i + 1];
+        break;
+      }
+    }
+    const k = (t - a[0]) / (b[0] - a[0] || 1);
+    const r = Math.round(lerp(a[1][0], b[1][0], k));
+    const g = Math.round(lerp(a[1][1], b[1][1], k));
+    const bl = Math.round(lerp(a[1][2], b[1][2], k));
+    return `rgb(${r},${g},${bl})`;
+  }
+
+  function clear() {
+    ctx.clearRect(0, 0, state.w, state.h);
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, state.w, state.h);
+  }
+
+  function plotArea() {
+    const left = state.w < 620 ? 60 : 76;
+    const bottom = state.w < 620 ? 52 : 64;
+    return {
+      x: left,
+      y: 34,
+      w: state.w - left - 30,
+      h: state.h - bottom - 54
+    };
+  }
+
+  function drawAxes(area, xLabel, yLabel, xTicks, yTicks) {
+    ctx.save();
+    ctx.strokeStyle = "#dce4ee";
+    ctx.lineWidth = 1;
+    ctx.fillStyle = "#6a7282";
+    ctx.font = "12px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    ctx.textBaseline = "middle";
+
+    yTicks.forEach(t => {
+      const y = mapY(t.value, t.min, t.max, area);
+      ctx.beginPath();
+      ctx.moveTo(area.x, y);
+      ctx.lineTo(area.x + area.w, y);
+      ctx.stroke();
+      ctx.textAlign = "right";
+      ctx.fillText(t.label, area.x - 9, y);
+    });
+
+    xTicks.forEach(t => {
+      const x = mapX(t.value, t.min, t.max, area);
+      ctx.beginPath();
+      ctx.moveTo(x, area.y);
+      ctx.lineTo(x, area.y + area.h);
+      ctx.stroke();
+      ctx.textAlign = "center";
+      ctx.fillText(t.label, x, area.y + area.h + 22);
+    });
+
+    ctx.strokeStyle = "#9fb0c3";
+    ctx.lineWidth = 1.2;
+    ctx.strokeRect(area.x, area.y, area.w, area.h);
+
+    ctx.fillStyle = "#172033";
+    ctx.font = "700 13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(xLabel, area.x + area.w / 2, area.y + area.h + 46);
+    ctx.save();
+    ctx.translate(22, area.y + area.h / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText(yLabel, 0, 0);
+    ctx.restore();
+    ctx.restore();
+  }
+
+  function buildHeatCache(area) {
+    const width = Math.max(1, Math.round(area.w));
+    const height = Math.max(1, Math.round(area.h));
+    const cache = document.createElement("canvas");
+    cache.width = width;
+    cache.height = height;
+    const hctx = cache.getContext("2d");
+    const step = state.w < 700 ? 4 : 3;
+    for (let px = 0; px < width; px += step) {
+      const lambda = lerp(C.lambdaMin, C.lambdaMax, px / width);
+      for (let py = 0; py < height; py += step) {
+        const temp = lerp(C.tempMax, C.tempMin, py / height);
+        const v = transmission(lambda, temp, 0, false);
+        hctx.fillStyle = colorHeat(v);
+        hctx.fillRect(px, py, step + 0.5, step + 0.5);
+      }
+    }
+    heatCache = { canvas: cache, width, height };
+  }
+
+  function drawHeatmap(area) {
+    const width = Math.max(1, Math.round(area.w));
+    const height = Math.max(1, Math.round(area.h));
+    if (!heatCache || heatCache.width !== width || heatCache.height !== height) {
+      buildHeatCache(area);
+    }
+    ctx.drawImage(heatCache.canvas, area.x, area.y, area.w, area.h);
+
+    const xTicks = [794.94, 794.98, 795.02, 795.06].map(v => ({
+      value: v,
+      label: v.toFixed(3),
+      min: C.lambdaMin,
+      max: C.lambdaMax
+    }));
+    const yTicks = [20, 26, 32, 38, 44].map(v => ({
+      value: v,
+      label: `${v}`,
+      min: C.tempMin,
+      max: C.tempMax
+    }));
+    drawAxes(area, "wavelength \u03bb (nm)", "temperature (\u00b0C)", xTicks, yTicks);
+
+    const x0 = mapX(C.lambda0, C.lambdaMin, C.lambdaMax, area);
+    const y0 = mapY(C.tempTarget, C.tempMin, C.tempMax, area);
+    ctx.save();
+    ctx.strokeStyle = "rgba(240,111,95,0.82)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([7, 6]);
+    ctx.beginPath();
+    ctx.moveTo(x0, area.y);
+    ctx.lineTo(x0, area.y + area.h);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(area.x, y0);
+    ctx.lineTo(area.x + area.w, y0);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = "#f06f5f";
+    ctx.beginPath();
+    ctx.arc(x0, y0, 6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#172033";
+    ctx.font = "700 13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("target", x0 + 10, y0 - 12);
+    ctx.restore();
+  }
+
+  function drawCurve(area, minX, maxX, fn, color) {
+    ctx.save();
+    ctx.beginPath();
+    const samples = Math.max(360, Math.floor(area.w));
+    for (let i = 0; i <= samples; i++) {
+      const u = i / samples;
+      const xVal = lerp(minX, maxX, u);
+      const yVal = fn(xVal);
+      const x = area.x + u * area.w;
+      const y = mapY(yVal, 0, 1, area);
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    }
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = color;
+    ctx.shadowColor = "rgba(24,183,201,0.24)";
+    ctx.shadowBlur = 10;
+    ctx.stroke();
+
+    ctx.lineTo(area.x + area.w, area.y + area.h);
+    ctx.lineTo(area.x, area.y + area.h);
+    ctx.closePath();
+    const grad = ctx.createLinearGradient(0, area.y, 0, area.y + area.h);
+    grad.addColorStop(0, "rgba(24,183,201,0.18)");
+    grad.addColorStop(1, "rgba(24,183,201,0.01)");
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawLambda(area, time) {
+    const xTicks = [794.94, 794.98, 795.02, 795.06].map(v => ({
+      value: v,
+      label: v.toFixed(3),
+      min: C.lambdaMin,
+      max: C.lambdaMax
+    }));
+    const yTicks = [0, 0.3, 0.6, 0.9].map(v => ({
+      value: v,
+      label: v.toFixed(1),
+      min: 0,
+      max: 1
+    }));
+    drawAxes(area, "wavelength \u03bb (nm)", "transmittance T", xTicks, yTicks);
+    drawCurve(area, C.lambdaMin, C.lambdaMax, lambda => transmission(lambda, state.temp, state.theta, false), "#18b7c9");
+
+    const targetX = mapX(C.lambda0, C.lambdaMin, C.lambdaMax, area);
+    const t = transmission(C.lambda0, state.temp, state.theta, false);
+    const targetY = mapY(t, 0, 1, area);
+    const pulse = 1 + 0.12 * Math.sin(time / 220);
+
+    ctx.save();
+    ctx.strokeStyle = "rgba(240,111,95,0.78)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([6, 6]);
+    ctx.beginPath();
+    ctx.moveTo(targetX, area.y);
+    ctx.lineTo(targetX, area.y + area.h);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = "#f06f5f";
+    ctx.beginPath();
+    ctx.arc(targetX, targetY, 7 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    const shift = resonanceShift(state.temp, state.theta);
+    const peak = C.lambda0 + shift;
+    const wrappedPeak = C.lambda0 + ((((peak - C.lambda0 + C.fsr / 2) % C.fsr) + C.fsr) % C.fsr) - C.fsr / 2;
+    const peakX = mapX(wrappedPeak, C.lambdaMin, C.lambdaMax, area);
+    ctx.fillStyle = "#172033";
+    ctx.font = "700 13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`T = ${t.toFixed(2)}`, targetX, Math.max(area.y + 18, targetY - 18));
+
+    ctx.strokeStyle = "rgba(34,179,106,0.78)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(peakX, area.y + 8);
+    ctx.lineTo(peakX, area.y + 26);
+    ctx.stroke();
+    ctx.fillStyle = "#22b36a";
+    ctx.fillText("peak", peakX, area.y + 42);
+    ctx.restore();
+  }
+
+  function findThetaPeaks(minTheta, maxTheta, fn) {
+    const samples = 900;
+    const values = [];
+    for (let i = 0; i <= samples; i++) {
+      const theta = lerp(minTheta, maxTheta, i / samples);
+      values.push({ theta, t: fn(theta) });
+    }
+
+    const peaks = [];
+    for (let i = 1; i < values.length - 1; i++) {
+      const prev = values[i - 1].t;
+      const curr = values[i].t;
+      const next = values[i + 1].t;
+      if (curr > prev && curr >= next && curr > 0.018) {
+        peaks.push(values[i]);
+      }
+    }
+
+    return peaks
+      .sort((a, b) => b.t - a.t)
+      .slice(0, 14);
+  }
+
+  function drawTheta(area, time) {
+    const thetaMin = C.thetaViewMin;
+    const thetaMax = C.thetaViewMax;
+    const xTicks = [-1.0, -0.5, 0, 0.5, 1.0].map(v => ({
+      value: v,
+      label: v.toFixed(v === 0 ? 0 : 2),
+      min: thetaMin,
+      max: thetaMax
+    }));
+    const yTicks = [0, 0.3, 0.6, 0.9].map(v => ({
+      value: v,
+      label: v.toFixed(1),
+      min: 0,
+      max: 1
+    }));
+    drawAxes(area, "tilt \u03b8", "transmittance T", xTicks, yTicks);
+    const markerStrength = zeroMarkerStrength();
+    const thetaFn = theta => transmission(C.lambda0, state.temp, theta, markerStrength);
+    drawCurve(area, thetaMin, thetaMax, thetaFn, "#18b7c9");
+
+    const zeroX = mapX(0, thetaMin, thetaMax, area);
+    ctx.save();
+    ctx.strokeStyle = "rgba(34,179,106,0.74)";
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 6]);
+    ctx.beginPath();
+    ctx.moveTo(zeroX, area.y);
+    ctx.lineTo(zeroX, area.y + area.h);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    const peaks = findThetaPeaks(thetaMin, thetaMax, thetaFn);
+    peaks.forEach((peak, index) => {
+      const x = mapX(peak.theta, thetaMin, thetaMax, area);
+      const y = mapY(peak.t, 0, 1, area);
+      const isTop = index < 2;
+      ctx.fillStyle = isTop ? "rgba(240,111,95,0.96)" : "rgba(240,111,95,0.42)";
+      ctx.beginPath();
+      ctx.arc(x, y, isTop ? 6 : 3.5, 0, Math.PI * 2);
+      ctx.fill();
+      if (isTop) {
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+    });
+
+    const topLeft = peaks.find(peak => peak.theta < 0);
+    const topRight = peaks.find(peak => peak.theta > 0);
+    if (topLeft && topRight && markerStrength > 0.7) {
+      ctx.strokeStyle = "rgba(240,111,95,0.34)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 5]);
+      ctx.beginPath();
+      ctx.moveTo(mapX(topLeft.theta, thetaMin, thetaMax, area), mapY(topLeft.t, 0, 1, area));
+      ctx.quadraticCurveTo(zeroX, area.y + area.h * 0.22, mapX(topRight.theta, thetaMin, thetaMax, area), mapY(topRight.t, 0, 1, area));
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "#f06f5f";
+      ctx.font = "700 13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("largest pair", zeroX, area.y + 34);
+    }
+
+    const t = currentT();
+    const x = mapX(state.theta, thetaMin, thetaMax, area);
+    const y = mapY(t, 0, 1, area);
+    const pulse = 1 + 0.14 * Math.sin(time / 180);
+    ctx.fillStyle = "#172033";
+    ctx.beginPath();
+    ctx.arc(x, y, 8 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = "#172033";
+    ctx.font = "700 13px -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(`\u03b8 = ${state.theta.toFixed(2)}`, x, Math.max(area.y + 18, y - 18));
+    ctx.fillStyle = "#22b36a";
+    ctx.fillText("\u03b8 = 0", zeroX, area.y + 24);
+    ctx.restore();
+  }
+
+  function draw(time) {
+    updateMotion(time);
+    clear();
+    const area = plotArea();
+    const mode = stages[state.stage].mode;
+    if (mode === "heat") drawHeatmap(area);
+    if (mode === "lambda") drawLambda(area, time);
+    if (mode === "theta") drawTheta(area, time);
+    updateDom();
+  }
+
+  function updateDom() {
+    const stage = stages[state.stage];
+    phaseText.textContent = stage.phase;
+    stageTitle.textContent = stage.title;
+    stageNote.innerHTML = stage.note
+      .replaceAll("lambda", "&lambda;")
+      .replaceAll("\u03bb", "&lambda;")
+      .replaceAll("\u03b8", "&theta;")
+      .replace("Ttemp", "T<sub>temp</sub>")
+      .replace("T \u2248", "T &asymp;");
+
+    const t = state.stage === stages.length - 1 ? C.peakT : currentT();
+    thetaValue.textContent = state.theta.toFixed(2);
+    tempValue.textContent = state.temp.toFixed(1);
+    transValue.textContent = t.toFixed(2);
+    transValue.classList.toggle("good", t > 0.82);
+
+    const thetaFit = 1 - clamp(Math.abs(state.theta) / 0.42, 0, 1);
+    const tempFit = 1 - clamp(Math.abs(state.temp - C.tempTarget) / 8, 0, 1);
+    const match = clamp(t / C.peakT, 0, 1);
+    thetaBar.style.setProperty("--w", `${Math.round(thetaFit * 100)}%`);
+    tempBar.style.setProperty("--w", `${Math.round(tempFit * 100)}%`);
+    matchBar.style.setProperty("--w", `${Math.round(match * 100)}%`);
+    thetaState.textContent = thetaFit > 0.96 ? "zero" : thetaFit > 0.45 ? "near" : "bad";
+    tempState.textContent = tempFit > 0.96 ? "set" : state.temp < C.tempTarget ? "cold" : "hot";
+    matchState.textContent = match > 0.9 ? "high" : match > 0.42 ? "mid" : "low";
+
+    const tiltDeg = clamp(state.theta / C.thetaMax, -1, 1) * 12;
+    document.documentElement.style.setProperty("--tilt", `${tiltDeg.toFixed(2)}deg`);
+    document.documentElement.style.setProperty("--heat", `${Math.round(18 + ((state.temp - C.tempMin) / (C.tempMax - C.tempMin)) * 72)}%`);
+    document.documentElement.style.setProperty("--glow", `${(0.48 + match * 0.9).toFixed(2)}`);
+    document.documentElement.style.setProperty("--glow-alpha", `${(0.22 + match * 0.58).toFixed(2)}`);
+    document.documentElement.style.setProperty("--smile", `${lerp(-0.55, 1, smoothstep(0.55, 0.95, match)).toFixed(2)}`);
+    document.documentElement.style.setProperty("--badge", `${(0.82 + match * 0.22).toFixed(2)}`);
+    document.documentElement.style.setProperty("--badge-alpha", `${(0.68 + match * 0.32).toFixed(2)}`);
+    badge.textContent = match > 0.9 ? "on" : "off";
+    badge.style.background = match > 0.9 ? "var(--green)" : "var(--coral)";
+
+    keyEls.forEach(el => {
+      const key = el.dataset.key;
+      const active = (key === "ArrowLeft" && state.stage > 0) || (key === "ArrowRight" && state.stage < stages.length - 1);
+      el.classList.toggle("active", active);
+      el.classList.toggle("disabled", !active);
+    });
+  }
+
+  function flashKey(key) {
+    const el = keyEls.find(node => node.dataset.key === key);
+    if (!el) return;
+    el.classList.remove("flash");
+    void el.offsetWidth;
+    el.classList.add("flash");
+  }
+
+  function advanceTo(next) {
+    const target = clamp(next, 0, stages.length - 1);
+    if (target === state.stage) return;
+    const distance = Math.abs(target - state.stage);
+    const pose = slidePoses[target];
+    const now = performance.now();
+    updateMotion(now);
+    state.stage = target;
+    state.motion = {
+      fromTheta: state.theta,
+      fromTemp: state.temp,
+      toTheta: pose.theta,
+      toTemp: pose.temp,
+      started: now,
+      duration: distance > 1 ? 1000 : 900
+    };
+    window.setTimeout(() => {
+      updateMotion(performance.now());
+      draw(performance.now());
+    }, state.motion.duration + 40);
+    updateDom();
+  }
+
+  function handleKey(event) {
+    if (!["ArrowLeft", "ArrowRight"].includes(event.key)) return;
+    event.preventDefault();
+    flashKey(event.key);
+    if (event.key === "ArrowRight") advanceTo(state.stage + 1);
+    if (event.key === "ArrowLeft") advanceTo(state.stage - 1);
+  }
+
+  function tick(time) {
+    if (canvas.width === 0 || canvas.height === 0) resizeCanvas();
+    draw(time);
+    requestAnimationFrame(tick);
+  }
+
+  window.addEventListener("resize", () => {
+    resizeCanvas();
+    draw(performance.now());
+  });
+  window.addEventListener("keydown", handleKey, { passive: false });
+  window.addEventListener("pointerdown", () => document.body.focus());
+
+  resizeCanvas();
+  updateDom();
+  document.body.focus();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

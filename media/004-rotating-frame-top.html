@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>회전계에서의 팽이</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #f7f8f6;
+    --panel: #ffffff;
+    --ink: #1f2522;
+    --muted: #65716b;
+    --line: #ccd7d0;
+    --faint: #e4eae6;
+    --active: #3d69b1;
+    --blue: #3d69b1;
+    --rust: #ad5543;
+    --green: #4d8f5e;
+    --amber: #b57616;
+    --shadow: 0 10px 26px rgba(29, 38, 34, 0.08);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; background: var(--bg); color: var(--ink); }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", system-ui, sans-serif;
+    background:
+      linear-gradient(120deg, rgba(61, 105, 177, 0.04), transparent 34%),
+      linear-gradient(240deg, rgba(181, 118, 22, 0.035), transparent 34%),
+      var(--bg);
+    color: var(--ink);
+  }
+
+  .app { min-height: 100vh; padding: 18px; }
+
+  .shell {
+    display: grid;
+    grid-template-columns: minmax(300px, 360px) minmax(420px, 1fr);
+    gap: 14px;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  header {
+    grid-column: 1 / -1;
+    display: flex; align-items: flex-end; justify-content: space-between; gap: 16px;
+    border-bottom: 1px solid var(--line); padding: 4px 2px 14px;
+  }
+  h1 { margin: 0; font-size: 24px; line-height: 1.16; }
+  .kicker { margin-top: 6px; color: var(--muted); font-size: 13px; line-height: 1.45; max-width: 640px; }
+  .kicker b { color: var(--blue); }
+  code { font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; }
+
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+  .badge {
+    display: inline-flex; align-items: center; min-height: 28px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: rgba(255,255,255,0.76); color: var(--muted);
+    padding: 5px 8px; font-size: 12px; font-weight: 720; white-space: nowrap;
+  }
+
+  .panel {
+    min-width: 0; border: 1px solid var(--line); border-radius: 8px;
+    background: rgba(255,255,255,0.9); box-shadow: var(--shadow); overflow: hidden; align-self: start;
+  }
+  .panel-title {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    min-height: 44px; border-bottom: 1px solid var(--faint); padding: 12px 14px;
+  }
+  .panel-title h2 { margin: 0; font-size: 14px; line-height: 1.2; }
+  .mini { color: var(--muted); font: 11px ui-monospace, "SFMono-Regular", Consolas, monospace; }
+  .panel-body { padding: 14px; }
+
+  .row { margin: 0 0 16px; }
+  .row:last-child { margin-bottom: 0; }
+  .row label { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin-bottom: 7px; }
+  .row label b { color: var(--blue); font-variant-numeric: tabular-nums; font-size: 13px; }
+  input[type=range] { width: 100%; accent-color: var(--active); cursor: pointer; }
+
+  .mainrow label b { color: var(--ink); font-size: 16px; }
+  .ticks { position: relative; height: 13px; font-size: 10px; color: var(--muted); margin-top: 4px; }
+  .ticks span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+  .ticks span:first-child { transform: translateX(0); }
+  .ticks span:last-child  { transform: translateX(-100%); }
+
+  #frozen {
+    display: none; margin: 12px 0 0; padding: 9px 12px; border-radius: 8px; text-align: center;
+    font-weight: 700; font-size: 13px;
+    background: color-mix(in srgb, var(--green) 12%, white);
+    border: 1px solid color-mix(in srgb, var(--green) 55%, white); color: var(--green);
+  }
+  #frozen.on { display: block; }
+
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    flex: 1; background: #fff; border: none; border-right: 1px solid var(--faint);
+    padding: 9px 6px; font: inherit; font-size: 12px; color: var(--muted); cursor: pointer;
+  }
+  .seg button:last-child { border-right: none; }
+  .seg button.active { background: var(--active); color: #fff; font-weight: 600; }
+
+  .btn {
+    width: 100%; background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    padding: 9px 6px; font: inherit; font-size: 12px; color: var(--ink); cursor: pointer;
+  }
+  .btn:hover { border-color: #8d9a94; }
+
+  .status {
+    display: grid; gap: 7px; padding: 11px 12px; border-radius: 8px;
+    background: linear-gradient(180deg, rgba(250,252,250,0.96), rgba(239,245,242,0.74));
+    border: 1px solid var(--faint); font-size: 12.5px;
+  }
+  .status .line { display: flex; justify-content: space-between; }
+  .status .k { color: var(--muted); }
+  .status .v { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+  .hint { margin-top: 12px; font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+
+  .stage-panel { padding: 0; }
+  .stage {
+    position: relative; width: 100%;
+    height: clamp(440px, 68vh, 760px);
+    background: radial-gradient(120% 120% at 50% 18%, #fbfdfb 0%, #e7ece8 78%, #dde4df 100%);
+    overflow: hidden; cursor: grab;
+  }
+  .stage.dragging { cursor: grabbing; }
+  .stage canvas { display: block; width: 100%; height: 100%; }
+  .stage-tag {
+    position: absolute; top: 12px; left: 14px; font-size: 11px; color: var(--muted);
+    background: rgba(255,255,255,0.7); border: 1px solid var(--faint); border-radius: 6px;
+    padding: 4px 9px; pointer-events: none; backdrop-filter: blur(4px);
+  }
+
+  @media (max-width: 880px) {
+    .shell { grid-template-columns: 1fr; }
+    .controls { order: 2; }
+    .stage-panel { order: 1; }
+  }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="shell">
+    <header>
+      <div class="header-text">
+        <h1>회전계(Rotating Frame)에서의 팽이</h1>
+        <p class="kicker">케이스(회전계)를 팽이의 <b>세차 속도</b>에 맞춰 돌리면, 그 프레임 안에서는
+          세차가 사라지고 팽이는 기울어진 채 <b>자전</b>만 하는 것처럼 보입니다.
+          슬라이더 <code>s</code>는 (케이스 회전 속도)/(세차 속도)인 무차원량입니다.</p>
+      </div>
+    </header>
+
+    <!-- 컨트롤 -->
+    <section class="panel controls">
+      <div class="panel-title"><h2>컨트롤</h2><span class="mini">s = Ω_case / φ̇</span></div>
+      <div class="panel-body">
+        <div class="row mainrow">
+          <label>케이스 회전 / 세차 속도 (s)<b id="sVal">0.00 ×</b></label>
+          <input id="s" type="range" min="-2" max="2" step="0.01" value="0">
+          <div class="ticks"><span style="left:0%">-2</span><span style="left:50%">0</span><span style="left:75%">1</span><span style="left:100%">2</span></div>
+          <div id="frozen">⏸ 세차 정지 — 기울어진 채 자전만</div>
+        </div>
+
+        <div class="row">
+          <label>기울기 각도 θ<b id="tVal">28°</b></label>
+          <input id="tilt" type="range" min="5" max="55" step="1" value="28">
+        </div>
+        <div class="row">
+          <label>자전 속도 (시각)<b id="spVal">1.0 ×</b></label>
+          <input id="spin" type="range" min="0.2" max="2.5" step="0.05" value="1">
+        </div>
+
+        <div class="row">
+          <label>관측 프레임</label>
+          <div class="seg" id="frameSeg">
+            <button data-frame="co" class="active">공회전(케이스)</button>
+            <button data-frame="lab">실험실(고정)</button>
+          </div>
+        </div>
+        <div class="row">
+          <button class="btn" id="btnNut">장동(nutation) 끄기</button>
+        </div>
+
+        <div class="status">
+          <div class="line"><span class="k">관측 프레임</span><span class="v" id="stFrame">공회전(케이스)</span></div>
+          <div class="line"><span class="k">보이는 세차율</span><span class="v" id="stPrec">1.00 ×</span></div>
+        </div>
+
+        <p class="hint">드래그: 시점 회전 · 휠: 확대/축소 · 슬라이더를 <b>1.00</b>에 맞춰보세요.
+          공회전 프레임에서는 바깥 격자와 빨간 마커가 거꾸로 돌아 “내가 회전 중”임을 보여줍니다.</p>
+      </div>
+    </section>
+
+    <!-- 3D 스테이지 -->
+    <section class="panel stage-panel">
+      <div class="stage" id="stage">
+        <div class="stage-tag" id="stageTag">공회전 프레임 · 세차율 1.00×</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function(){
+/* ===================== 물리 상수 / 상태 ===================== */
+const PRECESS = 0.55;   // 기준 세차 각속도 φ̇ (rad/s)
+const SPIN0   = 7.0;    // 기준 자전 각속도 ψ̇ (rad/s)
+const state = { s:0, tilt:28*Math.PI/180, spinMul:1, coRotating:true, nutation:true };
+
+/* ===================== 벡터 도우미 ===================== */
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+const norm=a=>{const m=Math.hypot(a[0],a[1],a[2])||1;return [a[0]/m,a[1]/m,a[2]/m];};
+const rotY=(p,a)=>{const c=Math.cos(a),s=Math.sin(a);return [c*p[0]+s*p[2],p[1],-s*p[0]+c*p[2]];};
+const rotX=(p,a)=>{const c=Math.cos(a),s=Math.sin(a);return [p[0],c*p[1]-s*p[2],s*p[1]+c*p[2]];};
+const LIGHT = norm([0.42,0.85,0.32]);
+
+/* ===================== 캔버스 / 카메라 ===================== */
+const stage = document.getElementById('stage');
+const appEl = document.getElementById('app');
+const canvas = document.createElement('canvas');
+stage.appendChild(canvas);
+const ctx = canvas.getContext('2d');
+
+let W=0, H=0, focal=600, dpr=1;
+const cam = { az:0.65, el:0.42, dist:7.5, target:[0,1.3,0] };
+
+function resize(){
+  dpr = Math.min(window.devicePixelRatio||1, 2);
+  W = stage.clientWidth; H = stage.clientHeight;
+  canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  focal = H*1.05;
+}
+
+function project(p){
+  const q=[p[0]-cam.target[0], p[1]-cam.target[1], p[2]-cam.target[2]];
+  const cz=Math.cos(cam.az), sz=Math.sin(cam.az);
+  let x1=cz*q[0]-sz*q[2], z1=sz*q[0]+cz*q[2], y1=q[1];
+  const ce=Math.cos(cam.el), se=Math.sin(cam.el);
+  let y2=ce*y1-se*z1, z2=se*y1+ce*z1, x2=x1;
+  const d = cam.dist - z2;            // 카메라 앞쪽 깊이(>0)
+  if(d < 0.05) return null;
+  return { x: W/2 + focal*x2/d, y: H/2 - focal*y2/d, d };
+}
+
+/* ===================== 도형 생성 ===================== */
+// 링(원) 좌표
+function ring(r,y,n,xf){
+  const a=[];
+  for(let i=0;i<n;i++){ const t=i/n*2*Math.PI; let p=[r*Math.cos(t),y,r*Math.sin(t)]; if(xf)p=xf(p); a.push(p); }
+  return a;
+}
+
+// 면(face) 모음을 만들어 반환. face = {pts:[[x,y,z]...], col:[r,g,b]}
+function buildFaces(frameRot, caseAng, phi, psi, tilt){
+  const faces=[];
+
+  /* --- 팽이 변환: 자전→기울기→(세차+프레임) --- */
+  const topXf = v => rotY( rotX( rotY(v, psi), tilt ), phi+frameRot );
+
+  // 원뿔 몸체(꼭짓점 아래 y=0, 밑면 위 y=1.5). 한 조각만 보라색 → 자전 가시화
+  const N=24, rB=0.62, yB=1.5;
+  const apex = topXf([0,0,0]);
+  const baseRing = ring(rB,yB,N,topXf);
+  for(let i=0;i<N;i++){
+    const b0=baseRing[i], b1=baseRing[(i+1)%N];
+    const col = (i===0)?[117,88,166]:[224,165,46];   // 보라 줄무늬 / 금색
+    faces.push({pts:[apex,b0,b1], col});
+  }
+  // 윗면 디스크(어깨)
+  const capC = topXf([0,yB,0]);
+  for(let i=0;i<N;i++){ faces.push({pts:[capC, baseRing[i], baseRing[(i+1)%N]], col:[193,106,42]}); }
+
+  // 자루(stem) 옆면
+  const sN=10, sr=0.05, y0=1.5, y1=2.05;
+  const sB=ring(sr,y0,sN,topXf), sT=ring(sr,y1,sN,topXf);
+  for(let i=0;i<sN;i++){ const j=(i+1)%sN; faces.push({pts:[sB[i],sB[j],sT[j],sT[i]], col:[136,147,160]}); }
+
+  /* --- 턴테이블(회전 바닥): 8개 부채꼴, 색 교대로 회전 가시화 --- */
+  const turnXf = v => rotY(v, caseAng+frameRot);
+  const TR=1.92, ty=0.07, SEC=8, sub=4;
+  for(let k=0;k<SEC;k++){
+    const a0=k/SEC*2*Math.PI, a1=(k+1)/SEC*2*Math.PI;
+    const poly=[ turnXf([0,ty,0]) ];
+    for(let j=0;j<=sub;j++){ const t=a0+(a1-a0)*j/sub; poly.push(turnXf([TR*Math.cos(t),ty,TR*Math.sin(t)])); }
+    faces.push({pts:poly, col: (k%2)?[205,216,207]:[233,239,234], flat:true});
+  }
+  // 중심 허브
+  faces.push({pts: ring(0.13,0.14,12,turnXf), col:[61,105,177], flat:true});
+
+  /* --- 외부 기준 마커(실험실 프레임, 빨강) --- */
+  const labXf = v => rotY(v, frameRot);
+  faces.push({pts:[ labXf([-0.16,0,4.5]), labXf([0.16,0,4.5]), labXf([0,0.6,4.45]) ], col:[173,85,67]});
+
+  return faces;
+}
+
+/* ===================== 면 음영 ===================== */
+function shade(col, pts3, flat){
+  let nl;
+  if(flat){ nl=1.0; }
+  else {
+    const n=norm(cross(sub(pts3[1],pts3[0]), sub(pts3[2],pts3[0])));
+    nl=Math.abs(dot(n,LIGHT));
+  }
+  const sh=0.5+0.5*nl;
+  return `rgb(${col[0]*sh|0},${col[1]*sh|0},${col[2]*sh|0})`;
+}
+
+/* ===================== 선/윤곽 그리기 ===================== */
+function strokePath(pts3, style, width, closed){
+  ctx.beginPath();
+  let started=false;
+  for(const p of pts3){ const q=project(p); if(!q){started=false;continue;}
+    if(!started){ ctx.moveTo(q.x,q.y); started=true; } else ctx.lineTo(q.x,q.y); }
+  if(closed) ctx.closePath();
+  ctx.strokeStyle=style; ctx.lineWidth=width; ctx.stroke();
+}
+function strokeSeg(a,b,style,width){ const p=project(a),q=project(b); if(!p||!q)return;
+  ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.strokeStyle=style;ctx.lineWidth=width;ctx.stroke(); }
+
+/* ===================== 렌더 ===================== */
+function render(frameRot, caseAng, phi, psi, tilt){
+  ctx.clearRect(0,0,W,H);
+
+  /* 1) 바닥 격자 (실험실 기준; 공회전 프레임에서 거꾸로 돈다) */
+  const labXf=v=>rotY(v,frameRot);
+  ctx.lineWidth=1;
+  for(let i=-9;i<=9;i+=1){
+    const a=Math.max(0, 0.16-Math.abs(i)*0.012);
+    ctx.strokeStyle=`rgba(120,140,128,${0.10+a})`;
+    strokeSeg(labXf([i,0,-9]), labXf([i,0,9]), ctx.strokeStyle,1);
+    strokeSeg(labXf([-9,0,i]), labXf([9,0,i]), ctx.strokeStyle,1);
+  }
+
+  /* 2) 팽이 접지 그림자 */
+  ctx.fillStyle='rgba(40,55,48,0.13)';
+  ctx.beginPath(); let st=false;
+  for(const p of ring(0.7,0.02,28,null)){ const q=project(p); if(!q){st=false;continue;}
+    if(!st){ctx.moveTo(q.x,q.y);st=true;} else ctx.lineTo(q.x,q.y); }
+  ctx.closePath(); ctx.fill();
+
+  /* 3) 솔리드 면: 깊이 정렬 후 뒤→앞 */
+  const faces=buildFaces(frameRot,caseAng,phi,psi,tilt);
+  const drawable=[];
+  for(const f of faces){
+    let sum=0, ok=true; const proj=[];
+    for(const p of f.pts){ const q=project(p); if(!q){ok=false;break;} proj.push(q); sum+=q.d; }
+    if(!ok) continue;
+    drawable.push({proj, depth:sum/f.pts.length, fill:shade(f.col,f.pts,f.flat)});
+  }
+  drawable.sort((a,b)=>b.depth-a.depth);
+  for(const d of drawable){
+    ctx.beginPath(); ctx.moveTo(d.proj[0].x,d.proj[0].y);
+    for(let i=1;i<d.proj.length;i++) ctx.lineTo(d.proj[i].x,d.proj[i].y);
+    ctx.closePath(); ctx.fillStyle=d.fill; ctx.fill();
+  }
+
+  /* 4) 팽이 대칭축 막대 + 끝 표식 */
+  const topXf=v=>rotY(rotX(rotY(v,psi),tilt),phi+frameRot);
+  strokeSeg(topXf([0,-0.25,0]), topXf([0,2.55,0]), 'rgba(61,105,177,0.9)', 2);
+  const tip=project(topXf([0,2.55,0]));
+  if(tip){ ctx.beginPath(); ctx.arc(tip.x,tip.y,4,0,7); ctx.fillStyle='#3d69b1'; ctx.fill(); }
+
+  /* 5) 투명 케이스 윤곽 (맨 위) */
+  const R=2.0, Hc=3.4;
+  strokePath(ring(R,0,48,null), 'rgba(61,105,177,0.35)', 1.5, true);    // 바닥 림
+  strokePath(ring(R,Hc,48,null), 'rgba(61,105,177,0.8)', 2, true);      // 윗 림
+  const caseXf=v=>rotY(v,caseAng+frameRot);
+  // 케이스 자전 가시화: 빨간 솔기 + 옅은 세로선들
+  for(let k=0;k<4;k++){
+    const ang=k*Math.PI/2;
+    const a=caseXf([R*Math.cos(ang),0,R*Math.sin(ang)]);
+    const b=caseXf([R*Math.cos(ang),Hc,R*Math.sin(ang)]);
+    if(k===0) strokeSeg(a,b,'rgba(173,85,67,0.95)',2.5);
+    else strokeSeg(a,b,'rgba(61,105,177,0.18)',1);
+  }
+}
+
+/* ===================== 루프 ===================== */
+let phi=0, caseAng=0, psi=0, last=performance.now();
+function tick(now){
+  const dt=Math.min((now-last)/1000, 0.05); last=now;
+  caseAng += state.s*PRECESS*dt;
+  phi     += PRECESS*dt;
+  psi     += SPIN0*state.spinMul*dt;
+  const frameRot = state.coRotating ? -caseAng : 0;
+  const tilt = state.tilt + (state.nutation ? 0.05*Math.sin(phi*3.0) : 0);
+
+  render(frameRot, caseAng, phi, psi, tilt);
+
+  const visPrec = state.coRotating ? (1-state.s) : 1;
+  stPrec.textContent = visPrec.toFixed(2)+' ×';
+  frozenEl.classList.toggle('on', state.coRotating && Math.abs(state.s-1)<0.03);
+  stageTag.textContent = (state.coRotating?'공회전 프레임':'실험실 프레임')+' · 세차율 '+visPrec.toFixed(2)+'×';
+
+  requestAnimationFrame(tick);
+}
+
+/* ===================== UI 바인딩 ===================== */
+const $=id=>document.getElementById(id);
+const stPrec=$('stPrec'), frozenEl=$('frozen'), stageTag=$('stageTag');
+$('s').oninput    = e=>{ state.s=+e.target.value; $('sVal').textContent=state.s.toFixed(2)+' ×'; };
+$('tilt').oninput = e=>{ state.tilt=+e.target.value*Math.PI/180; $('tVal').textContent=e.target.value+'°'; };
+$('spin').oninput = e=>{ state.spinMul=+e.target.value; $('spVal').textContent=state.spinMul.toFixed(1)+' ×'; };
+$('frameSeg').addEventListener('click', e=>{
+  const b=e.target.closest('button[data-frame]'); if(!b) return;
+  state.coRotating = b.dataset.frame==='co';
+  $('frameSeg').querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
+  $('stFrame').textContent = state.coRotating ? '공회전(케이스)' : '실험실(고정)';
+});
+$('btnNut').onclick = ()=>{ state.nutation=!state.nutation; $('btnNut').textContent=state.nutation?'장동(nutation) 끄기':'장동(nutation) 켜기'; };
+
+/* 시점 드래그 / 줌 */
+let drag=null;
+stage.addEventListener('pointerdown', e=>{ drag={x:e.clientX,y:e.clientY}; stage.classList.add('dragging'); stage.setPointerCapture(e.pointerId); });
+stage.addEventListener('pointermove', e=>{ if(!drag)return;
+  cam.az += (e.clientX-drag.x)*0.008;
+  cam.el = Math.max(-0.2, Math.min(1.4, cam.el + (e.clientY-drag.y)*0.008));
+  drag={x:e.clientX,y:e.clientY};
+});
+const endDrag=()=>{ drag=null; stage.classList.remove('dragging'); };
+stage.addEventListener('pointerup', endDrag);
+stage.addEventListener('pointercancel', endDrag);
+stage.addEventListener('wheel', e=>{ e.preventDefault();
+  cam.dist = Math.max(4, Math.min(18, cam.dist*(1+e.deltaY*0.001)));
+}, {passive:false});
+
+/* ===================== 크기 / 부모 높이 보고 ===================== */
+let heightTimer=0;
+function postHeightSoon(){
+  clearTimeout(heightTimer);
+  heightTimer=setTimeout(()=>{
+    const height=Math.max(document.documentElement.scrollHeight, document.body?document.body.scrollHeight:0);
+    try{ parent.postMessage({type:"interactive-media-height", height}, "*"); }catch(_){}
+  },80);
+}
+window.addEventListener('resize',()=>{ resize(); postHeightSoon(); });
+if("ResizeObserver" in window){ new ResizeObserver(()=>{ resize(); postHeightSoon(); }).observe(appEl); }
+
+resize();
+postHeightSoon();
+requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

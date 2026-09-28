@@ -1,0 +1,2 @@
+# Keep LF everywhere so Windows (local) and Linux (cloud sessions) produce identical files
+* text=auto eol=lf

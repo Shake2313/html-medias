@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>속도에 비례하는 한 항 — L₁ = Aᵢq̇ⁱ 의 지형</title>
+
+<script>
+window.MathJax = {
+  tex: {
+    inlineMath: [['$', '$'], ['\\(', '\\)']],
+    displayMath: [['$$', '$$'], ['\\[', '\\]']],
+    tags: 'none'
+  },
+  chtml: { matchFontHeight: false },
+  options: { skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'] }
+};
+</script>
+<script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400&family=Gowun+Batang:wght@400;700&family=Song+Myung&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --paper:#f6f1e6;
+    --paper-2:#efe7d6;
+    --ink:#21201a;
+    --ink-soft:#4d483d;
+    --ink-faint:#7a7363;
+    --accent:#0d5c54;
+    --accent-deep:#073f39;
+    --gold:#a3792a;
+    --gold-soft:#c79a45;
+    --line:#d9cfb8;
+    --maxw:43rem;
+  }
+
+  *{box-sizing:border-box;}
+
+  html{ -webkit-text-size-adjust:100%; }
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Gowun Batang', serif;
+    font-size:1.08rem;
+    line-height:1.92;
+    font-weight:400;
+    letter-spacing:.002em;
+    /* subtle paper grain */
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(13,92,84,.035), transparent 60%),
+      radial-gradient(circle at 90% 100%, rgba(163,121,42,.045), transparent 55%);
+    background-attachment:fixed;
+  }
+
+  /* faint grain overlay */
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    pointer-events:none;
+    opacity:.4;
+    z-index:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+
+  .wrap{
+    position:relative;
+    z-index:1;
+    max-width:var(--maxw);
+    margin:0 auto;
+    padding:clamp(2rem,6vw,5.5rem) clamp(1.15rem,5vw,2rem) 7rem;
+  }
+
+  /* ---------- title block ---------- */
+  .colophon{
+    font-family:'Fraunces', serif;
+    font-size:.72rem;
+    letter-spacing:.42em;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:600;
+    margin-bottom:1.7rem;
+    padding-bottom:1.1rem;
+    border-bottom:1px solid var(--line);
+  }
+  h1.title{
+    font-family:'Song Myung', serif;
+    font-weight:400;
+    font-size:clamp(2.2rem,7vw,3.5rem);
+    line-height:1.18;
+    letter-spacing:-.01em;
+    margin:.2rem 0 1rem;
+    color:var(--ink);
+  }
+  .subtitle{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-weight:400;
+    font-size:clamp(1.05rem,3vw,1.35rem);
+    line-height:1.55;
+    color:var(--ink-soft);
+    margin-bottom:1.6rem;
+  }
+  .subtitle .mono{ font-style:normal; }
+  .lede-rule{
+    width:3.2rem; height:3px;
+    background:var(--gold);
+    margin:1.8rem 0 2.6rem;
+  }
+
+  /* ---------- table of contents ---------- */
+  .toc{
+    background:linear-gradient(180deg, var(--paper-2), rgba(239,231,214,.4));
+    border:1px solid var(--line);
+    border-radius:3px;
+    padding:1.4rem 1.6rem 1.5rem;
+    margin:0 0 3.5rem;
+    font-size:.96rem;
+  }
+  .toc h2{
+    font-family:'Fraunces', serif;
+    text-transform:uppercase;
+    letter-spacing:.28em;
+    font-size:.72rem;
+    color:var(--accent);
+    font-weight:600;
+    margin:0 0 .9rem;
+  }
+  .toc ol{ margin:0; padding:0; list-style:none; counter-reset:toc; }
+  .toc li{ counter-increment:toc; padding:.22rem 0; display:flex; gap:.7rem; align-items:baseline; }
+  .toc li::before{
+    content:counter(toc,decimal-leading-zero);
+    font-family:'Fraunces', serif;
+    color:var(--gold); font-weight:600;
+    font-size:.82rem; min-width:1.6rem;
+  }
+  .toc a{ color:var(--ink-soft); text-decoration:none; border-bottom:1px solid transparent; transition:border-color .2s,color .2s;}
+  .toc a:hover{ color:var(--accent); border-color:var(--gold-soft); }
+
+  /* ---------- section headings ---------- */
+  section{ margin-top:3.6rem; }
+  .eyebrow{
+    font-family:'Fraunces', serif;
+    text-transform:uppercase;
+    letter-spacing:.34em;
+    font-size:.68rem;
+    color:var(--gold);
+    font-weight:600;
+    display:block;
+    margin-bottom:.5rem;
+  }
+  h2.sec{
+    font-family:'Song Myung', serif;
+    font-weight:400;
+    font-size:clamp(1.55rem,4.4vw,2.1rem);
+    line-height:1.3;
+    margin:.1rem 0 1.3rem;
+    color:var(--ink);
+    position:relative;
+  }
+  h2.sec .num{
+    font-family:'Fraunces', serif;
+    color:var(--accent);
+    font-weight:600;
+    margin-right:.55rem;
+  }
+  h3.sub{
+    font-family:'Gowun Batang', serif;
+    font-weight:700;
+    font-size:1.22rem;
+    margin:2.4rem 0 .8rem;
+    color:var(--accent-deep);
+    letter-spacing:.005em;
+  }
+
+  p{ margin:1.05rem 0; }
+  .wrap > section p:first-of-type{ margin-top:0; }
+
+  em{ font-style:italic; color:var(--ink); }
+  strong{ font-weight:700; color:var(--ink); }
+  .gold-em{ color:var(--accent-deep); font-weight:700; }
+
+  /* drop cap on prologue */
+  .dropcap::first-letter{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    float:left;
+    font-size:4.1rem;
+    line-height:.82;
+    padding:.32rem .55rem .1rem 0;
+    color:var(--accent);
+  }
+
+  /* ---------- equations ---------- */
+  .eq{
+    display:grid;
+    grid-template-columns:1fr auto;
+    align-items:center;
+    gap:.6rem;
+    margin:1.7rem 0;
+    overflow-x:auto;
+  }
+  .eq > .body{ justify-self:center; min-width:0; }
+  .eq > .tag{
+    font-family:'Fraunces', serif;
+    color:var(--gold);
+    font-weight:600;
+    font-size:.95rem;
+    white-space:nowrap;
+  }
+  mjx-container{ color:var(--ink); }
+
+  /* ---------- callout boxes ---------- */
+  .box{
+    background:var(--paper-2);
+    border-left:3px solid var(--accent);
+    border-radius:0 3px 3px 0;
+    padding:1.15rem 1.4rem 1.2rem;
+    margin:1.9rem 0;
+  }
+  .box .label{
+    font-family:'Fraunces', serif;
+    text-transform:uppercase;
+    letter-spacing:.22em;
+    font-size:.66rem;
+    color:var(--accent);
+    font-weight:600;
+    display:block;
+    margin-bottom:.5rem;
+  }
+  .box p{ margin:.5rem 0; }
+  .box p:first-of-type{ margin-top:0; }
+  .box p:last-of-type{ margin-bottom:0; }
+
+  /* the differential-forms inset — the "Rosetta stone" */
+  .forms{
+    background:
+      linear-gradient(135deg, var(--accent-deep), #0a4a44);
+    color:#e9efe4;
+    border:none;
+    border-radius:5px;
+    padding:1.6rem 1.7rem 1.7rem;
+    margin:2.4rem 0;
+    box-shadow:0 14px 34px -18px rgba(7,63,57,.7);
+  }
+  .forms .label{ color:var(--gold-soft); }
+  .forms strong{ color:#fff; }
+  .forms mjx-container{ color:#eef3e9 !important; }
+  .forms .label::before{ content:"◆  "; }
+
+  /* the Magnus contrast aside — "false cognate" */
+  .caution{
+    background:transparent;
+    border:1.5px dashed var(--gold-soft);
+    border-radius:4px;
+    padding:1.2rem 1.5rem 1.3rem;
+    margin:2rem 0;
+  }
+  .caution .label{
+    font-family:'Fraunces', serif;
+    text-transform:uppercase;
+    letter-spacing:.22em;
+    font-size:.66rem;
+    color:var(--gold);
+    font-weight:600;
+    display:block;
+    margin-bottom:.5rem;
+  }
+  .caution .label::before{ content:"⚠  "; }
+  .caution p:first-of-type{ margin-top:0;}
+  .caution p:last-of-type{ margin-bottom:0;}
+
+  /* ---------- table ---------- */
+  .tbl-wrap{ overflow-x:auto; margin:2rem 0; }
+  table.corr{
+    border-collapse:collapse;
+    width:100%;
+    font-size:.95rem;
+    min-width:34rem;
+  }
+  table.corr th, table.corr td{
+    text-align:left;
+    padding:.7rem .8rem;
+    border-bottom:1px solid var(--line);
+    vertical-align:top;
+  }
+  table.corr thead th{
+    font-family:'Fraunces', serif;
+    font-weight:600;
+    color:var(--accent);
+    border-bottom:2px solid var(--gold);
+    font-size:.82rem;
+    letter-spacing:.04em;
+  }
+  table.corr tbody th{
+    font-family:'Gowun Batang',serif;
+    font-weight:700;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  table.corr tbody tr:last-child td,
+  table.corr tbody tr:last-child th{ border-bottom:none; }
+  table.corr td .small{ color:var(--ink-faint); font-size:.86rem; display:block; }
+
+  /* ---------- figure / svg diagram ---------- */
+  figure{ margin:2.8rem 0; }
+  figure svg{ width:100%; height:auto; display:block; }
+  figcaption{
+    font-family:'Fraunces',serif;
+    font-style:italic;
+    font-size:.86rem;
+    color:var(--ink-faint);
+    text-align:center;
+    margin-top:.9rem;
+    line-height:1.5;
+  }
+
+  /* pull quote */
+  .pull{
+    font-family:'Fraunces', serif;
+    font-style:italic;
+    font-size:clamp(1.25rem,3.4vw,1.6rem);
+    line-height:1.5;
+    color:var(--accent-deep);
+    text-align:center;
+    margin:3rem auto;
+    max-width:34rem;
+    position:relative;
+  }
+  .pull::before, .pull::after{
+    content:"";
+    display:block;
+    width:2.4rem; height:2px;
+    background:var(--gold);
+    margin:1.1rem auto;
+  }
+
+  /* footer colophon */
+  .end-rule{ width:100%; height:1px; background:var(--line); margin:4rem 0 1.6rem;}
+  .endnote{ font-size:.86rem; color:var(--ink-faint); line-height:1.7; }
+  .endnote .mark{ color:var(--gold); font-family:'Fraunces',serif; font-weight:600; }
+
+  .mono{ font-family:'Fraunces',serif; }
+
+  ::selection{ background:rgba(163,121,42,.25); }
+
+  @media print{
+    body{ background:#fff; }
+    body::before{ display:none; }
+    .forms{ box-shadow:none; -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="colophon">물리학 통합 노트 · Geometric Threads</div>
+    <h1 class="title">속도에 비례하는 한 항</h1>
+    <p class="subtitle">라그랑지안의 <span class="mono">$L_1 = A_i\,\dot q^{\,i}$</span> 가 그리는<br>게이지 퍼텐셜·곡률·홀로노미의 지형</p>
+    <div class="lede-rule"></div>
+  </header>
+
+  <nav class="toc">
+    <h2>차례</h2>
+    <ol>
+      <li><a href="#prologue">세 개의 옆걸음</a></li>
+      <li><a href="#spine">척추 — 속도 1차항의 해부</a></li>
+      <li><a href="#em">전자기학 — 로렌츠 힘과 아하로노프–봄</a></li>
+      <li><a href="#classical">고전역학 — 코리올리 힘과 사냐크</a></li>
+      <li><a href="#quantum">양자역학 — 베리 위상과 이상 속도</a></li>
+      <li><a href="#three-d">3차원의 우연 — 쌍대성, 그리고 형식의 언어</a></li>
+      <li><a href="#extensions">확장 — 홀, 라모어·한레, 그리고 마그누스</a></li>
+      <li><a href="#synthesis">종합 — 하나의 기하</a></li>
+    </ol>
+  </nav>
+
+  <section id="prologue">
+    <span class="eyebrow">Prologue</span>
+    <h2 class="sec"><span class="num">0</span>세 개의 옆걸음</h2>
+
+    <p class="dropcap">자기장 속으로 던져진 전하는 똑바로 날아가지 않는다. 경로는 옆으로 휜다. 북반구에서 발사된 포탄은 표적의 오른쪽으로 빗나가고, 태풍은 거대한 소용돌이를 그린다. 자기력이 전혀 미치지 않는 솔레노이드 바깥을 돌아온 전자는, 아무런 힘을 받지 않았음에도 간섭무늬의 이동을 만들어낸다. 이 세 장면은 각각 다른 세기에, 서로 다른 학문의 언어를 통해, 일면식도 없는 학자들에 의해 기술되었다. 패러데이의 전자기장, 코리올리의 회전 좌표계, 베리의 단열 양자역학이 바로 그것이다.</p>
+
+    <p>그런데 이들은 모두 공통된 수학적 구조를 공유한다. 라그랑지안에 슬그머니 끼어드는, <strong>속도에 1차로 비례하는 단 하나의 항</strong>이 바로 그것이다.</p>
+
+    <div class="eq"><div class="body">$$ L = \underbrace{\tfrac{1}{2}\,m\,g_{ij}\,\dot q^{\,i}\dot q^{\,j}}_{\text{운동}} \;+\; \underbrace{A_i(q)\,\dot q^{\,i}}_{L_1} \;-\; \underbrace{V(q)}_{\text{퍼텐셜}} $$</div><div class="tag">(0)</div></div>
+
+    <p>가운데 항 $L_1 = A_i\dot q^{\,i}$ 는 사소해 보인다. 위치의 함수 $A_i(q)$ 와 속도의 단순한 내적일 뿐이다. 그러나 이 항은 물체의 운동에 두 가지 뚜렷한 흔적을 남긴다. 하나는 운동 방향에 <em>수직으로</em> 작용하여 역학적 일을 하지 않는 <strong>횡방향 힘</strong>이고, 다른 하나는 닫힌 경로를 한 바퀴 돌고 나서야 비로소 드러나는 <strong>위상</strong>, 곧 홀로노미(holonomy)다.</p>
+
+    <p>이 글의 주장은 단순하다. 로렌츠 힘과 아하로노프-봄 위상, 코리올리 힘과 사냐크 효과, 베리 위상과 이상 홀 효과 — 이 모든 현상들은 식 (0)의 동일한 항에서 출발하여 같은 두 갈래로 뻗어나온 쌍둥이들이다. 서로 다른 분야에서 독립적으로 발견되었지만, 수학적으로는 완전히 동일한 기하학적 구조를 띤다. 우리는 먼저 그 공통의 뼈대를 해부하고, 세 분야를 차례로 그 위에 얹어 살펴본 뒤, 마지막으로 미분 형식의 언어를 통해 이 셋이 본질적으로 한 몸임을 증명할 것이다.</p>
+  </section>
+
+  <section id="spine">
+    <span class="eyebrow">The Spine</span>
+    <h2 class="sec"><span class="num">1</span>척추 — 속도 1차항의 해부</h2>
+
+    <p>식 (0)을 오일러-라그랑주 방정식에 대입해 보자. 표기를 단순화하기 위해 평탄한 공간($g_{ij}=\delta_{ij}$)을 택하고, $A_i$ 는 시간에 무관하다고 가정한다. 정준운동량은</p>
+
+    <div class="eq"><div class="body">$$ p_i = \frac{\partial L}{\partial \dot q^{\,i}} = m\,\dot q^{\,i} + A_i $$</div><div class="tag">(1)</div></div>
+
+    <p>이며, 운동량의 일부가 이미 장(field) $A_i$ 에 '저장'되어 있음을 알 수 있다. 이것이 훗날 모든 위상의 씨앗이 된다. 오일러-라그랑주 방정식 $\dfrac{d}{dt}p_i - \dfrac{\partial L}{\partial q^{\,i}}=0$ 을 전개하면,</p>
+
+    <div class="eq"><div class="body">$$ m\,\ddot q^{\,i} + (\partial_j A_i)\,\dot q^{\,j} - (\partial_i A_j)\,\dot q^{\,j} + \partial_i V = 0 $$</div><div class="tag">(2)</div></div>
+
+    <p>두 미분항이 깔끔하게 하나로 묶인다. 여기서 결정적인 역할을 하는 객체가 등장한다. 바로 퍼텐셜 $A_i$ 의 '회전'을 측정하는 <strong>반대칭 텐서</strong>이다.</p>
+
+    <div class="eq"><div class="body">$$ F_{ij} \equiv \partial_i A_j - \partial_j A_i \,, \qquad F_{ij} = -\,F_{ji} $$</div><div class="tag">(3)</div></div>
+
+    <p>이를 정의하면, 운동방정식은 다음 한 줄로 명쾌하게 응축된다.</p>
+
+    <div class="box">
+      <span class="label">중심 결과 · The Master Equation</span>
+      <div class="eq"><div class="body">$$ m\,\ddot q^{\,i} = -\,\partial_i V \;+\; F_{ij}\,\dot q^{\,j} $$</div><div class="tag">(4)</div></div>
+      <p>퍼텐셜 $V$ 가 만들어내는 통상적인 힘 외에, $L_1$ 은 <strong>반대칭 텐서와 속도를 축약한 힘인 $F_{ij}\dot q^{\,j}$</strong> 를 추가로 남긴다. 바로 이 단일 항이 본 문서의 핵심 주제다.</p>
+    </div>
+
+    <p>식 (4)에서 새롭게 유도된 힘은 두 가지 보편적인 성질을 지니며, 두 가지 모두 $F_{ij}$ 의 <em>반대칭성</em> 하나로부터 필연적으로 도출된다.</p>
+
+    <h3 class="sub">성질 ⅰ. 횡방향성 — 일을 하지 않는 힘</h3>
+
+    <p>운동에너지의 시간 변화율을 살펴보자. 식 (4)에 $\dot q^{\,i}$ 를 내적하면 다음과 같다.</p>
+
+    <div class="eq"><div class="body">$$ \frac{d}{dt}\!\left(\tfrac12 m\,\dot q^2\right) = \dot q^{\,i}\big(-\partial_i V\big) \;+\; F_{ij}\,\dot q^{\,i}\dot q^{\,j} $$</div><div class="tag">(5)</div></div>
+
+    <p>여기서 $F_{ij}$ 는 반대칭인 반면 $\dot q^{\,i}\dot q^{\,j}$ 는 대칭이므로, 둘의 축약인 $F_{ij}\dot q^{\,i}\dot q^{\,j}$ 는 <strong>항상 0</strong>이 된다. 즉, $L_1$ 이 만들어내는 힘은 결코 에너지를 변화시키지 못한다. 이는 언제나 속도 벡터와 수직으로 작용하는 <gold-em class="gold-em">자이로스코프 힘(gyroscopic force)</gold-em>이다. 전하의 궤도를 휘게 하거나 태풍을 회전시킬 뿐, 결코 물체의 속력을 변화시키지 않는다. 이것이 바로 앞서 언급한 '옆걸음'의 정체다.</p>
+
+    <h3 class="sub">성질 ⅱ. 홀로노미 — 닫힌 고리가 기억하는 것</h3>
+
+    <p>이번엔 작용(action) $S=\int L\,dt$ 에 포함된 $L_1$ 항을 살펴보자. $\int A_i \dot q^{\,i}\,dt = \int A_i\,dq^{\,i}$ 는 경로를 따라가는 <em>선적분</em>이다. 시작점과 끝점이 동일한 닫힌 경로 $\partial\Sigma$ 를 한 바퀴 돌면, 스토크스 정리에 의해 다음과 같이 전개된다.</p>
+
+    <div class="eq"><div class="body">$$ \oint_{\partial\Sigma} A_i\,dq^{\,i} \;=\; \iint_{\Sigma} F_{ij}\,\frac{dq^{\,i}\wedge dq^{\,j}}{2} $$</div><div class="tag">(6)</div></div>
+
+    <p>퍼텐셜 $A_i$ 의 고리 적분은 곧 곡률 $F_{ij}$ 가 통과하는 면적의 <strong>선속(flux)</strong>과 같다. 고전 역학에서는 작용의 한 조각에 불과하지만, 양자역학에서 상태가 $e^{iS/\hbar}$ 로 진화하는 순간 이 적분은 직접 관측 가능한 <gold-em class="gold-em">위상(phase)</gold-em>으로 발현된다.</p>
+
+    <div class="eq"><div class="body">$$ \text{위상} \;=\; \frac{1}{\hbar}\oint A_i\,dq^{\,i} \;=\; \frac{1}{\hbar}\iint_\Sigma F \qquad(\text{닫힌 고리})$$</div><div class="tag">(7)</div></div>
+
+    <h3 class="sub">게이지 자유 — 무엇이 진짜인가</h3>
+
+    <p>$A_i$ 자체에는 임의성이 내재되어 있다. 임의의 스칼라 함수 $\chi(q)$ 에 대해</p>
+
+    <div class="eq"><div class="body">$$ A_i \;\longrightarrow\; A_i + \partial_i \chi $$</div><div class="tag">(8)</div></div>
+
+    <p>로 변환하더라도, $F_{ij}=\partial_i A_j-\partial_j A_i$ 는 $\partial_i\partial_j\chi-\partial_j\partial_i\chi=0$ 만큼 더해질 뿐 그 값은 전혀 변하지 않는다. 운동방정식 (4)도, 닫힌 고리의 위상 (7)도 동일하게 유지된다. 따라서 물리적으로 실질적인 의미를 갖는 것은 게이지에 의존하는 $A_i$ 가 <em>아니라</em>, 곡률 $F_{ij}$ 와 그것의 고리 적분(홀로노미)뿐이다. 이 하나의 명제가 게이지 이론 전체의 출발점이며, 앞으로 살펴볼 세 분야가 각자의 '게이지 선택'을 갖게 되는 이유이기도 하다.</p>
+
+    <p>마지막으로 짚고 넘어갈 점이 있다. $L_1=A_i\dot q^{\,i}$ 은 속도에 1차로 비례하므로 시간 반전 $t\to -t$($\dot q\to -\dot q$) 아래에서 <strong>홀수(odd)</strong> 대칭성을 갖는다. 따라서 이 항이 지배하는 모든 현상은 특정한 '회전 방향'을 선택하게 된다. 자기장의 방향, 자전 방향, 곡률의 배향이 바로 그것이다. 우리가 다룰 세 쌍둥이가 모두 '시간을 거꾸로 돌리면 그 양상이 뒤바뀌는' 일족인 까닭이다.</p>
+
+    <figure>
+      <svg viewBox="0 0 720 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="L1 항이 곡률 F로, 다시 횡력과 홀로노미로 갈라지고 세 분야로 내려가는 구조도">
+        <defs>
+          <marker id="arw" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 Z" fill="#0d5c54"/>
+          </marker>
+          <marker id="arwg" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto">
+            <path d="M0,0 L9,4.5 L0,9 Z" fill="#a3792a"/>
+          </marker>
+        </defs>
+        <style>
+          .nlbl{font-family:'Song Myung',serif;fill:#21201a;}
+          .slbl{font-family:'Fraunces',serif;fill:#7a7363;font-style:italic;}
+          .mlbl{font-family:'Fraunces',serif;fill:#073f39;font-weight:600;}
+          .col{font-family:'Gowun Batang',serif;fill:#4d483d;}
+          .colb{font-family:'Gowun Batang',serif;fill:#21201a;font-weight:700;}
+        </style>
+
+        <rect x="270" y="14" width="180" height="56" rx="6" fill="#073f39"/>
+        <text x="360" y="38" text-anchor="middle" class="mlbl" fill="#e9efe4" font-size="15">속도 1차항</text>
+        <text x="360" y="58" text-anchor="middle" fill="#c79a45" font-family="Fraunces,serif" font-size="15">L₁ = Aᵢ q̇ⁱ</text>
+
+        <line x1="360" y1="70" x2="360" y2="104" stroke="#0d5c54" stroke-width="2" marker-end="url(#arw)"/>
+        <text x="375" y="92" class="slbl" font-size="12">F = dA</text>
+
+        <rect x="282" y="106" width="156" height="50" rx="6" fill="#efe7d6" stroke="#a3792a" stroke-width="1.5"/>
+        <text x="360" y="128" text-anchor="middle" class="colb" font-size="14">곡률 2-형식</text>
+        <text x="360" y="146" text-anchor="middle" class="mlbl" font-size="14">Fᵢⱼ = ∂ᵢAⱼ − ∂ⱼAᵢ</text>
+
+        <path d="M320,156 C250,180 210,196 196,222" fill="none" stroke="#0d5c54" stroke-width="2" marker-end="url(#arw)"/>
+        <path d="M400,156 C490,180 530,196 544,222" fill="none" stroke="#0d5c54" stroke-width="2" marker-end="url(#arw)"/>
+
+        <text x="196" y="244" text-anchor="middle" class="nlbl" font-size="16">횡방향 힘</text>
+        <text x="196" y="264" text-anchor="middle" class="mlbl" font-size="13">Fᵢⱼ q̇ʲ ⊥ q̇</text>
+        <text x="196" y="282" text-anchor="middle" class="slbl" font-size="11.5">일을 하지 않음</text>
+
+        <text x="544" y="244" text-anchor="middle" class="nlbl" font-size="16">홀로노미 (위상)</text>
+        <text x="544" y="264" text-anchor="middle" class="mlbl" font-size="13">∮A = ∬F</text>
+        <text x="544" y="282" text-anchor="middle" class="slbl" font-size="11.5">고리가 기억하는 것</text>
+
+        <line x1="120" y1="318" x2="600" y2="318" stroke="#d9cfb8" stroke-width="1"/>
+
+        <text x="140" y="346" class="slbl" font-size="11" letter-spacing="1.5">ELECTROMAGNETISM</text>
+        <text x="140" y="372" class="colb" font-size="13.5">로렌츠 힘</text>
+        <text x="140" y="394" class="col" font-size="12.5">qv × B</text>
+        <text x="140" y="426" class="colb" font-size="13.5">아하로노프–봄</text>
+        <text x="140" y="448" class="col" font-size="12.5">(q/ℏ)Φ_B</text>
+
+        <text x="320" y="346" class="slbl" font-size="11" letter-spacing="1.5">CLASSICAL</text>
+        <text x="320" y="372" class="colb" font-size="13.5">코리올리 힘</text>
+        <text x="320" y="394" class="col" font-size="12.5">−2mΩ × v</text>
+        <text x="320" y="426" class="colb" font-size="13.5">사냐크 효과</text>
+        <text x="320" y="448" class="col" font-size="12.5">∝ Ω · Area</text>
+
+        <text x="500" y="346" class="slbl" font-size="11" letter-spacing="1.5">QUANTUM</text>
+        <text x="500" y="372" class="colb" font-size="13.5">이상 속도</text>
+        <text x="500" y="394" class="col" font-size="12.5">−k̇ × 𝓕</text>
+        <text x="500" y="426" class="colb" font-size="13.5">베리 위상</text>
+        <text x="500" y="448" class="col" font-size="12.5">∮A·dR</text>
+
+        <line x1="196" y1="292" x2="170" y2="332" stroke="#d9cfb8" stroke-width="1" stroke-dasharray="3 3"/>
+        <line x1="544" y1="292" x2="540" y2="332" stroke="#d9cfb8" stroke-width="1" stroke-dasharray="3 3"/>
+      </svg>
+      <figcaption>그림 1. 하나의 항에서 두 갈래로, 두 갈래에서 다시 세 분야로. 위쪽 구조(<span class="mono">L₁ → F → {힘, 위상}</span>)는 분야와 무관하게 동일하며, 아래 세 열은 동일한 골격이 각 학문의 언어로 번역된 결과다.</figcaption>
+    </figure>
+  </section>
+
+  <section id="em">
+    <span class="eyebrow">Pillar Ⅰ · Electromagnetism</span>
+    <h2 class="sec"><span class="num">2</span>전자기학 — 로렌츠 힘과 아하로노프–봄</h2>
+
+    <p>우리에게 가장 익숙한 번역부터 시작해 보자. 전하 $q$ 를 가진 입자의 라그랑지안은 국제단위계(SI)에서 다음과 같이 표기된다.</p>
+
+    <div class="eq"><div class="body">$$ L = \tfrac12 m\,\mathbf v^2 \;+\; q\,\mathbf A\!\cdot\!\mathbf v \;-\; q\phi $$</div><div class="tag">(9)</div></div>
+
+    <p>이를 식 (0)과 한 글자씩 대조해 보면 구조가 정확히 일치함을 알 수 있다.</p>
+
+    <div class="eq"><div class="body">$$ A_i^{(L_1)} = q\,A_i \,, \qquad V = q\phi $$</div><div class="tag">(10)</div></div>
+
+    <p>여기서 $\mathbf A$ 는 전자기 벡터 퍼텐셜이다. 그렇다면 곡률 (3)은 다음과 같이 도출된다.</p>
+
+    <div class="eq"><div class="body">$$ F_{ij} = q\,(\partial_i A_j - \partial_j A_i) = q\,\varepsilon_{ijk}B_k \,, \qquad \mathbf B = \nabla\times\mathbf A $$</div><div class="tag">(11)</div></div>
+
+    <p>즉, $L_1$ 의 곡률은 정확히 (전하량을 곱한) <strong>자기장</strong> 그 자체다. 이제 이를 앞서 구한 중심 결과 (4)에 그대로 대입한다.</p>
+
+    <div class="eq"><div class="body">$$ m\,\ddot q^{\,i} = -\,\partial_i(q\phi) + q\,\varepsilon_{ijk}\,\dot q^{\,j} B_k \;\;\Longrightarrow\;\; m\ddot{\mathbf r} = q\mathbf E + q\,\mathbf v\times\mathbf B $$</div><div class="tag">(12)</div></div>
+
+    <p>이로부터 <strong>로렌츠 힘</strong>이 온전히 도출된다. 자기력 $q\,\mathbf v\times\mathbf B$ 가 바로 척추 역할을 하는 횡력 $F_{ij}\dot q^{\,j}$ 이며, 성질 ⅰ에 따라 자기력이 결코 일을 하지 않는다는 익숙한 물리학적 사실은 이제 '$F_{ij}$ 가 반대칭이기 때문'이라는 단 한 줄의 명제로 명쾌하게 설명된다. 전하의 궤도가 휘어지는 이유는 자기력이라는 신비한 성질 때문이 아니라, 속도 1차항이 본질적으로 그러한 수학적 역할을 수행하기 때문이다.</p>
+
+    <h3 class="sub">아하로노프–봄 — 힘 없이 남는 위상</h3>
+
+    <p>이제 홀로노미 갈래를 살펴보자. 무한히 긴 솔레노이드를 가정해 보자. 자기장 $\mathbf B$ 는 솔레노이드 <em>내부</em>에만 갇혀 있고, 전자가 지나가는 바깥 영역에서는 $\mathbf B=\mathbf 0$ 이다. 고전적으로 전자는 어떠한 힘도 받지 않는다. 그런데 솔레노이드 양옆으로 갈라졌다가 다시 만나는 두 경로 사이의 위상차는 식 (7)에 의해 다음과 같이 계산된다.</p>
+
+    <div class="eq"><div class="body">$$ \Delta\varphi = \frac{q}{\hbar}\oint \mathbf A\cdot d\mathbf l = \frac{q}{\hbar}\iint \mathbf B\cdot d\mathbf S = \frac{q}{\hbar}\,\Phi_B $$</div><div class="tag">(13)</div></div>
+
+    <p>이는 경로가 둘러싼 자기 선속 $\Phi_B$ 에 비례하여 결코 0이 되지 않는다. 이것이 바로 <gold-em class="gold-em">아하로노프-봄 효과(Aharonov-Bohm effect)</gold-em>다. 입자가 통과한 궤적에는 자기장이 전혀 존재하지 않았음에도 간섭무늬가 이동한다. 이것이야말로 '물리적으로 진짜인 것은 $\mathbf A$ 가 아니라 그 고리 적분(=$F$ 의 선속)이다'라는 게이지 원리의 가장 순수한 실험적 증거라 할 수 있다. 국소적으로 관측되는 현상($\mathbf B=0$)이 전부가 아니다. 위상은 경로가 이루는 고리 전체의 기하학적 특성을 기억한다.</p>
+  </section>
+
+  <section id="classical">
+    <span class="eyebrow">Pillar Ⅱ · Classical Mechanics</span>
+    <h2 class="sec"><span class="num">3</span>고전역학 — 코리올리 힘과 사냐크</h2>
+
+    <p>이번엔 자석도, 전하도 등장하지 않는다. 우리는 단지 회전하는 좌표계에 놓여 있을 뿐이다. 각속도 $\boldsymbol\Omega$ 로 도는 기준계에서, 회전계 좌표 $\mathbf r$ 로 관측한 속도 $\dot{\mathbf r}$ 와 관성계 속도의 관계는 $\dot{\mathbf r}_{\text{관성}} = \dot{\mathbf r} + \boldsymbol\Omega\times\mathbf r$ 로 주어진다. 자유 입자의 라그랑지안 $L=\tfrac12 m\dot{\mathbf r}_{\text{관성}}^2$ 를 회전계 변수로 전개하면 다음과 같다.</p>
+
+    <div class="eq"><div class="body">$$ L = \tfrac12 m\,\dot{\mathbf r}^2 \;+\; \underbrace{m\,\dot{\mathbf r}\cdot(\boldsymbol\Omega\times\mathbf r)}_{L_1} \;+\; \underbrace{\tfrac12 m\,(\boldsymbol\Omega\times\mathbf r)^2}_{\text{원심 퍼텐셜}} $$</div><div class="tag">(14)</div></div>
+
+    <p>가운데 위치한 교차항이 정확히 우리의 $L_1$ 이다. 항을 하나씩 대조해 보면</p>
+
+    <div class="eq"><div class="body">$$ \mathbf A^{(L_1)} = m\,(\boldsymbol\Omega\times\mathbf r) $$</div><div class="tag">(15)</div></div>
+
+    <p>이며, 그 곡률은 다음과 같다.</p>
+
+    <div class="eq"><div class="body">$$ \nabla\times\mathbf A^{(L_1)} = m\,\nabla\times(\boldsymbol\Omega\times\mathbf r) = 2m\,\boldsymbol\Omega $$</div><div class="tag">(16)</div></div>
+
+    <p>즉, 곡률은 <strong>각속도의 두 배</strong>가 된다($F_{ij}\leftrightarrow 2m\,\boldsymbol\Omega$). 이는 회전계가 스스로 만들어내는 일종의 '유효 자기장'인 셈이다. 이를 중심 결과 (4)에 대입하면</p>
+
+    <div class="eq"><div class="body">$$ m\ddot{\mathbf r} = \underbrace{-\,2m\,\boldsymbol\Omega\times\dot{\mathbf r}}_{\text{코리올리}} \;\underbrace{-\,m\,\boldsymbol\Omega\times(\boldsymbol\Omega\times\mathbf r)}_{\text{원심}} $$</div><div class="tag">(17)</div></div>
+
+    <p><gold-em class="gold-em">코리올리 힘</gold-em> $-2m\,\boldsymbol\Omega\times\dot{\mathbf r}$ 가 정확히 횡력 $F_{ij}\dot q^{\,j}$ 의 형태로 등장한다. 구조적으로 자기력과 완벽히 동일하다. 속도에 수직으로 작용하고, 일을 하지 않으며, 자전 방향이 곧 '회전의 배향'을 결정한다. 여기서 명확히 구별해야 할 점이 있다. 원심력은 $L_1$ 이 아닌 식 (14)의 마지막 <em>퍼텐셜</em> 항에서 기인한다. 따라서 원심력은 역학적 일을 할 수 있는 반면(속도와 수직이 아님), 오직 코리올리 힘만이 진정한 자이로스코프 힘으로 작용한다.</p>
+
+    <div class="box">
+      <span class="label">곁가지 · 푸코 진자</span>
+      <p>코리올리의 홀로노미는 푸코 진자의 움직임에서 시각적으로 드러난다. 진동면은 하루에 걸쳐 위도가 정하는 각도만큼 회전하는데, 그 누적 각도는 진자가 지구 표면 위에서 그린 닫힌 경로가 둘러싼 <em>입체각</em>과 정확히 일치한다. 구면 위 평행 이동(parallel transport)의 홀로노미, 곧 '실공간의 베리 위상'인 것이다. 이는 5장에서 다룰 양자역학적 사촌과 완전히 동일한 기하학적 구조를 가진다.</p>
+    </div>
+
+    <h3 class="sub">사냐크 효과 — 회전이 새기는 위상</h3>
+
+    <p>홀로노미 갈래로 넘어가면 사냐크 효과(Sagnac effect)를 만나게 된다. 회전하는 고리를 따라 시계 방향과 반시계 방향으로 갈라져 도는 두 파동(빛이든 물질파든)은 식 (7)에 따라 위상차를 얻게 된다.</p>
+
+    <div class="eq"><div class="body">$$ \oint \mathbf A^{(L_1)}\!\cdot d\mathbf l = 2m\,\boldsymbol\Omega\cdot\!\iint d\mathbf S \;\;\propto\;\; \boldsymbol\Omega\cdot(\text{둘러싼 면적}) $$</div><div class="tag">(18)</div></div>
+
+    <p>빛의 경우, 이 위상차는 $\Delta\varphi = \dfrac{8\pi}{\lambda c}\,\boldsymbol\Omega\cdot\mathbf A_{\text{면적}}$ 의 형태로 나타난다. 이 역시 구조적으로 아하로노프-봄 효과와 글자 그대로 동일한 수식이다. <strong>퍼텐셜의 고리 적분 = 곡률이 둘러싼 선속 = $\boldsymbol\Omega\cdot$면적</strong>이라는 구조다. 솔레노이드의 자기 선속이 회전의 각속도 선속으로 치환되었을 뿐이다. 오늘날 링 레이저 자이로스코프와 원자 간섭계 자이로스코프는 바로 이 단 한 줄의 원리를 이용해 회전을 정밀하게 측정하고 있다.</p>
+  </section>
+
+  <section id="quantum">
+    <span class="eyebrow">Pillar Ⅲ · Quantum Mechanics</span>
+    <h2 class="sec"><span class="num">4</span>양자역학 — 베리 위상과 이상 속도</h2>
+
+    <p>세 번째 영역에 이르면 '공간'의 개념이 추상화된다. 입자의 위치 $q$ 대신, 해밀토니안을 결정짓는 <em>매개변수</em> $\mathbf R$ 가 천천히 변한다고 가정해 보자: $H(\mathbf R(t))$. 단열 정리(adiabatic theorem)에 따라 양자계는 순간 고유 상태 $|n(\mathbf R)\rangle$ 에 머물면서, 동역학적 위상에 더해 순수히 기하학적인 위상을 축적하게 된다. 이때 자연스럽게 정의되는 것이 바로 <strong>베리 접속(Berry connection)</strong>이다.</p>
+
+    <div class="eq"><div class="body">$$ \mathbf A_n(\mathbf R) = i\,\langle n(\mathbf R)\,|\,\nabla_{\mathbf R}\,n(\mathbf R)\rangle $$</div><div class="tag">(19)</div></div>
+
+    <p>여기서 '속도'는 매개변수의 변화율 $\dot{\mathbf R}$ 이고, 유효 작용(effective action) 속에 포함된 기하학적 항은 정확히 $\mathbf A_n\!\cdot\dot{\mathbf R}$ 이 되어, 다시 한번 $A_i\,\dot q^{\,i}$ 의 형태를 띤다. 물리적 실공간이 매개변수 공간 $\mathbf R$ 로 치환되었을 뿐, 중심 골격은 동일하다. 닫힌 고리를 한 바퀴 돌면 식 (7)에 따라 다음 결과를 얻는다.</p>
+
+    <div class="eq"><div class="body">$$ \gamma_n = \oint_C \mathbf A_n\cdot d\mathbf R = \iint_\Sigma \boldsymbol{\mathcal F}_n\cdot d\mathbf S \,, \qquad \boldsymbol{\mathcal F}_n = \nabla_{\mathbf R}\times\mathbf A_n $$</div><div class="tag">(20)</div></div>
+
+    <p>이것이 바로 <gold-em class="gold-em">베리 위상(Berry phase)</gold-em>이다. 곡률 $\boldsymbol{\mathcal F}_n$ 은 <strong>베리 곡률</strong>로, $L_1$ 의 $F_{ij}$ 가 매개변수 공간에서 입은 새로운 옷이라 할 수 있다. 게이지 자유도 역시 그대로 살아 있다. 위상의 재정의 $|n\rangle\to e^{i\zeta(\mathbf R)}|n\rangle$ 는 $\mathbf A_n\to\mathbf A_n-\nabla\zeta$ 로 접속을 변화시키지만(식 (8)과 동일한 꼴), 닫힌 고리의 $\gamma_n$ 은 여전히 불변이다.</p>
+
+    <h3 class="sub">이상 속도 — 운동량 공간의 로렌츠 힘</h3>
+
+    <p>그렇다면 횡방향 힘의 갈래는 어떻게 나타날까? 결정(crystal) 내부 파속(wave packet)의 준고전적 운동방정식 속에 그 해답이 숨어 있다.</p>
+
+    <div class="eq"><div class="body">$$ \dot{\mathbf r} = \frac{1}{\hbar}\nabla_{\mathbf k}\,\varepsilon(\mathbf k) \;-\; \dot{\mathbf k}\times\boldsymbol{\mathcal F}(\mathbf k) $$</div><div class="tag">(21)</div></div>
+
+    <p>우변의 두 번째 항인 $-\dot{\mathbf k}\times\boldsymbol{\mathcal F}$ 에 주목해 보자. '속도'($\dot{\mathbf k}$)와 '곡률'($\boldsymbol{\mathcal F}$, 운동량 공간에서의 베리 곡률)의 외적으로 이루어져 있다. 이는 식 (12)의 $q\,\mathbf v\times\mathbf B$ 와 완전히 동일한 구조다. 단지 무대가 실공간에서 운동량 공간으로 옮겨졌을 뿐이다. 따라서 이를 한 문장으로 요약할 수 있다: <strong>베리 곡률은 운동량 공간의 자기장이다.</strong> 전기장을 걸면($\dot{\mathbf k}\propto\mathbf E$) 전자는 외부 자기장이 전혀 없음에도 횡방향으로 흐르게 된다. 이것이 내재적(intrinsic) 이상 홀 효과의 기원이며, 다음 장에서 살펴볼 첫 번째 주제이기도 하다.</p>
+
+    <div class="pull">서로 다른 세 개의 무대 — 실공간, 회전계, 매개변수 공간 — 위에서 똑같은 대본 $A_i\dot q^{\,i}$ 가 상연되고 있는 것이다.</div>
+  </section>
+
+  <section id="three-d">
+    <span class="eyebrow">The Accident of Three</span>
+    <h2 class="sec"><span class="num">5</span>3차원의 우연 — 쌍대성, 그리고 형식의 언어</h2>
+
+    <p>여기서 한 가지 근본적인 의문을 정직하게 마주해 보자. 우리는 지금까지 로렌츠 힘을 $\mathbf v\times\mathbf B$ 로, 코리올리 힘을 $\boldsymbol\Omega\times\dot{\mathbf r}$ 로, 이상 속도를 $\dot{\mathbf k}\times\boldsymbol{\mathcal F}$ 로 — 모두 <em>외적(cross product)</em>의 형태로 기술해 왔다. 그런데 정작 이 모든 것의 척추인 식 (4)에는 외적이 존재하지 않았다. 오로지 텐서 축약 $F_{ij}\dot q^{\,j}$ 만이 있었을 뿐이다. 이 둘은 대체 어떻게 동일한가? 그리고 왜 하필 우리가 사는 세계에서는 이를 외적으로 표현할 수 있는가?</p>
+
+    <p>그 해답은 3차원이라는 공간적 우연에 있다. 반대칭 텐서 $F_{ij}$ 는 독립 성분이 $\binom{3}{2}=3$ 개($F_{12},F_{13},F_{23}$)인데, 이는 마침 3차원 벡터의 성분 개수와 정확히 일치한다. 그래서 우리는 레비-치비타(Levi-Civita) 기호를 이용하여 <strong>호지 쌍대(Hodge dual)</strong>를 구성할 수 있다.</p>
+
+    <div class="eq"><div class="body">$$ B_k = \tfrac12\,\varepsilon_{kij}\,F_{ij} \;\;\Longleftrightarrow\;\; F_{ij} = \varepsilon_{ijk}\,B_k $$</div><div class="tag">(22)</div></div>
+
+    <p>이를 대입하면 텐서 축약이 비로소 외적의 형태로 변신한다.</p>
+
+    <div class="eq"><div class="body">$$ F_{ij}\,\dot q^{\,j} = \varepsilon_{ijk}\,\dot q^{\,j} B_k = (\dot{\mathbf q}\times\mathbf B)_i $$</div><div class="tag">(23)</div></div>
+
+    <p>즉, <strong>외적은 텐서 축약이 3차원 공간에 드리운 그림자에 불과하다.</strong> $n$ 차원 공간에서 $F_{ij}$ 는 $\binom n2$ 개의 독립 성분을 가지는데, 이 값이 차원 $n$ 과 같아지는 경우는 오직 $n=3$ 일 때뿐이다. 4차원 시공간에서 $F_{\mu\nu}$ 는 6개의 성분으로 전기장과 자기장을 한 몸에 담아내며, 어떠한 단일 3차원 벡터로도 환원되지 않는다. 베리 곡률 역시 매개변수가 3개보다 많은 공간에 존재하는 순간, 외적의 언어는 그 힘을 잃고 무너져 내린다.</p>
+
+    <p>그러나 진짜 알맹이인 <em>횡방향성</em>은 차원과 무관하게 살아남는다. 식 (5)에서 확인했듯, $F_{ij}\dot q^{\,i}\dot q^{\,j}=0$ 이라는 사실은 오직 반대칭성에서만 비롯되며, 이는 모든 차원에서 참이다. '$\mathbf v\times\mathbf B$ 가 $\mathbf v$ 에 수직이다'라는 3차원적인 논증보다 훨씬 깔끔하고 보편적이다. 외적이라는 직관적이고 편안한 표기를 포기하는 대신, 우리는 차원에 구애받지 않는 더 견고한 수학적 진실을 얻게 된다.</p>
+
+    <div class="forms">
+      <span class="label">기하학적 재포장 · 형식의 언어</span>
+      <p>이 모든 구조를 단 한 번의 호흡에 담아내는 수학적 언어가 바로 미분 형식(differential forms)이다. 퍼텐셜을 1-형식 $A = A_i\,dq^{\,i}$ 로 간주하면, 곡률은 곧 그 외미분(exterior derivative)인</p>
+      <div class="eq"><div class="body">$$ F = dA $$</div></div>
+      <p>가 된다. $d^2=0$ 이라는 단 한 줄의 성질에서 $dF = d^2 A = 0$ 이 도출되며, 이는 자기 홀극(magnetic monopole)이 존재하지 않는다는 $\nabla\!\cdot\mathbf B=0$ 의 일반화인 비안키 항등식(Bianchi identity)으로 직결된다. 힘은 곡률에 속도를 끼워 넣는 내부곱 $-\,\iota_{\dot q}F$ 이며, 홀로노미는 일반화된 스토크스 정리</p>
+      <div class="eq"><div class="body">$$ \oint_{\partial\Sigma} A = \int_{\Sigma} dA = \int_{\Sigma} F $$</div></div>
+      <p>그 자체로 표현된다. 게이지 변환은 $A\to A+d\chi$ 이고, 곡률은 $F\to F+d^2\chi = F$ 가 되어 불변으로 남는다. <strong>이 과정의 어디에도 계량(metric)은 등장하지 않는다.</strong> 외적은 계량을 필요로 하지만 외미분은 그렇지 않다. 그렇기에 이 구조가 차원과 좌표계를 초월하여 보편적인 것이다. 앞서 다룬 세 가지 분야가 본질적으로 한 몸임을 증명하는 로제타석은 결국 이 다섯 줄의 수식이다.</p>
+    </div>
+  </section>
+
+  <section id="extensions">
+    <span class="eyebrow">Beyond the Three</span>
+    <h2 class="sec"><span class="num">6</span>확장 — 홀, 라모어·한레, 그리고 마그누스</h2>
+
+    <p>중심 골격이 분명해졌으니, 동일한 뼈대가 다른 물리 현상으로 어떻게 뻗어나가는지, 그리고 어디서 '닮았지만 본질은 다른' 함정이 기다리고 있는지 살펴보자.</p>
+
+    <h3 class="sub">홀 효과 — 두 갈래가 한 곳에서 만나다</h3>
+
+    <p>홀 효과(Hall effect)는 척추의 두 갈래가 가장 극적으로 합류하는 지점이다. <strong>정상 홀 효과(Ordinary Hall effect)</strong>는 2장의 메커니즘을 그대로 따른다. 외부 자기장 속 전하 운반자가 로렌츠 힘을 받아 옆으로 밀려나며 횡방향 전압을 형성한다(힘 갈래). <strong>이상 홀 효과(Anomalous Hall effect)</strong>는 4장에서 다룬 이상 속도의 결과다. 외부 자기장이 없더라도 베리 곡률이 전자를 횡방향으로 흐르게 만든다.</p>
+
+    <p>그리고 양자 홀 효과(Quantum Hall effect)에 이르면 홀로노미 갈래가 위상수학(topology)과 만난다. 홀 전도도는 다음과 같이 양자화된다.</p>
+
+    <div class="eq"><div class="body">$$ \sigma_{xy} = \frac{e^2}{h}\,C \,, \qquad C = \frac{1}{2\pi}\iint_{\text{BZ}} \boldsymbol{\mathcal F}\,d^2k \;\in\; \mathbb{Z} $$</div><div class="tag">(24)</div></div>
+
+    <p>베리 곡률을 브릴루앙 영역(Brillouin zone) 토러스 전체에 대해 적분한 선속 — 곧 식 (7)의 홀로노미 — 이 <strong>천 수(Chern number)</strong>라는 정수값으로 귀결되는 것이다. 척추에 해당하는 '고리 적분 = 곡률 선속'이라는 관계식이 여기서 비로소 양자화된 위상 불변량(topological invariant)으로 단단히 굳어진다. 힘 갈래(정상 홀)와 위상 갈래(천 수)가 마침내 하나의 물리 현상 안에서 손을 맞잡게 된다.</p>
+
+    <h3 class="sub">라모어 세차와 한레 — 스핀 공간의 자이로스코프</h3>
+
+    <p>이번에는 입자의 물리적 위치가 아니라 그 입자가 가진 자기 모멘트 $\boldsymbol\mu$ 가 옆으로 '휜다'. 외부 자기장 속의 자기 모멘트는</p>
+
+    <div class="eq"><div class="body">$$ \frac{d\boldsymbol\mu}{dt} = \gamma\,\boldsymbol\mu\times\mathbf B $$</div><div class="tag">(25)</div></div>
+
+    <p>의 방정식에 따라 진동수 $\omega_L=\gamma B$ 로 <gold-em class="gold-em">라모어 세차(Larmor precession)</gold-em>를 수행한다. $\boldsymbol\mu$ 의 크기는 변하지 않은 채 그 방향만 회전하게 되는데, 이는 척추의 자이로스코프 구조($X\times(\cdot)$ 형태의 반대칭 생성자)가 실공간이 아닌 <strong>스핀 및 내부 공간</strong>에서 작동하고 있음을 의미한다.</p>
+
+    <p>이러한 세차 운동이 빛과 물질의 결맞음(coherence) 상태에 적용되면 바로 <gold-em class="gold-em">한레 효과(Hanle effect)</gold-em>로 발현된다. 원자의 들뜬 상태와 바닥 상태 사이의 결맞음이 횡방향 자기장 속에서 라모어 세차를 겪게 되고, 자기장이 0인 영점 교차(zero-field level crossing) 부근에서는 세차가 멈추어 결맞음이 온전히 보존되므로 자기장에 대해 폭이 매우 좁은 공명 신호가 나타난다. 한레 효과는 본질적으로 <strong>광학적 결맞음의 라모어 세차</strong>이며, 그 공명선의 폭이 곧 원자 자력계(atomic magnetometry)의 계측 감도를 결정짓는 핵심 요소가 된다.</p>
+
+    <div class="box">
+      <span class="label">정직한 연결 · 스핀의 기하학적 위상</span>
+      <p>물론 라모어 세차와 한레 효과를 단순히 '실공간 $L_1$ 항'의 직접적인 결과라고 비약할 수는 없다. 이 둘을 묶는 연결 고리는 공간 퍼텐셜이 아니라 <em>회전 생성자의 반대칭 구조</em>, 즉 '수직 방향으로 진화하라'는 자이로스코프적 명령에 있다. 그러나 기하학적 다리는 분명히 놓여 있다. 스핀-½ 입자가 자기장 방향을 따라 매개변수 공간에서 입체각 $\Omega_s$ 를 휩쓸고 지나가면, 정확히 식 (20)의 베리 위상 $\gamma_\pm = \mp\tfrac12\,\Omega_s$ 를 획득하게 된다. 스핀 세차 운동의 기하학은 이처럼 4장의 베리 곡률 논의로 곧장 이어진다.</p>
+    </div>
+
+    <div class="caution">
+      <span class="label">거짓 동족어 · 마그누스 효과</span>
+      <p>회전하는 공이 유체 속을 날아갈 때 옆으로 휘어지는 마그누스 힘(Magnus force)은 $\mathbf F \sim \rho\,\boldsymbol\Gamma\times\mathbf v$ 의 형태를 띤다. 수학적 형태만 놓고 보면 $\boldsymbol\omega\times\mathbf v$ 라는 외적 구조가 로렌츠 힘이나 코리올리 힘과 판박이여서, 이를 '또 하나의 쌍둥이'로 분류하고 싶은 유혹에 빠지기 쉽다. 그러나 그 물리적 기원은 전혀 다르다. 마그누스 힘은 유체의 순환(circulation)과 베르누이, 쿠타-주콥스키 정리에서 유도되는 <strong>창발적 연속체 효과(emergent continuum effect)</strong>일 뿐, 단일 입자 라그랑지안의 속도 1차항에서 기인한 것이 아니다. 닫힌 형태의 $F=dA$ 곡률도 없고, 게이지 불변인 홀로노미도 존재하지 않는다. 여기에 종종 에너지 소산(dissipation)이 수반되기도 한다.</p>
+      <p>이러한 점에서 마그누스 효과는 무엇이 '진정한 물리적 대응'의 자격을 갖추었는지 가르쳐 주는 훌륭한 반면교사라 할 수 있다. <strong>힘의 대수적 형태가 유사하다고 해서 그 근저의 기하학적 원리까지 동일한 것은 아니다.</strong> 진정한 의미에서 같은 족속이 되려면 작용(action) 속에 진정한 의미의 $A_i\dot q^{\,i}$ 가 포함되어 있어야 하며, 그 필연적 결과로 닫힌 곡률과 홀로노미가 수반되어야만 한다.</p>
+    </div>
+  </section>
+
+  <section id="synthesis">
+    <span class="eyebrow">Synthesis</span>
+    <h2 class="sec"><span class="num">7</span>종합 — 하나의 기하</h2>
+
+    <p>이제 지금까지 다룬 모든 물리적 언어들을 하나의 표로 종합해 보자. 표의 각 행은 동일한 골격 — $A \to F \to \{\text{횡력},\ \text{홀로노미}\}$ — 이 각 분야의 고유한 언어로 치환된 결과를 보여준다.</p>
+
+    <div class="tbl-wrap">
+    <table class="corr">
+      <thead>
+        <tr>
+          <th>분야</th>
+          <th>퍼텐셜 $A$</th>
+          <th>곡률 $F$</th>
+          <th>횡방향 힘</th>
+          <th>홀로노미</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th>전자기학</th>
+          <td>$q\mathbf A$<span class="small">벡터 퍼텐셜</span></td>
+          <td>$q\mathbf B$</td>
+          <td>$q\,\mathbf v\times\mathbf B$<span class="small">로렌츠 힘</span></td>
+          <td>$\tfrac{q}{\hbar}\Phi_B$<span class="small">아하로노프–봄 효과</span></td>
+        </tr>
+        <tr>
+          <th>고전역학 (회전계)</th>
+          <td>$m(\boldsymbol\Omega\times\mathbf r)$</td>
+          <td>$2m\boldsymbol\Omega$</td>
+          <td>$-2m\,\boldsymbol\Omega\times\mathbf v$<span class="small">코리올리 힘</span></td>
+          <td>$\propto\boldsymbol\Omega\!\cdot\!\text{Area}$<span class="small">사냐크 효과</span></td>
+        </tr>
+        <tr>
+          <th>양자역학 (단열)</th>
+          <td>$i\langle n|\nabla_R n\rangle$<span class="small">베리 접속</span></td>
+          <td>$\boldsymbol{\mathcal F}_n$<span class="small">베리 곡률</span></td>
+          <td>$-\dot{\mathbf k}\times\boldsymbol{\mathcal F}$<span class="small">이상 속도</span></td>
+          <td>$\oint\mathbf A_n\!\cdot d\mathbf R$<span class="small">베리 위상</span></td>
+        </tr>
+      </tbody>
+    </table>
+    </div>
+
+    <p>위 표의 다섯 열을 관통하는 세 가지 불변의 진실이 이 글 전체의 주제를 관통한다.</p>
+
+    <p><strong>첫째, $L_1$ 항이 만들어내는 모든 힘은 역학적 일을 하지 않는다.</strong> 자기력도, 코리올리 힘도, 이상 속도에 의한 횡력도 마찬가지다. 이는 곡률의 반대칭성 단 하나에서 필연적으로 도출되는, 차원을 가리지 않는 자이로스코프적 보편 성질이다.</p>
+
+    <p><strong>둘째, $L_1$ 의 닫힌 고리 적분은 곧 홀로노미이며, 이는 곡률의 선속과 동일하다.</strong> 아하로노프-봄 효과의 자기 선속도, 사냐크 효과의 회전 면적도, 베리 위상의 곡률 적분도 — 이 모든 현상은 결국 $\oint A=\int F$ 라는 단 한 줄의 수학적 변주에 불과하다. 양자 홀 효과에 이르러서는 이 값이 정수로 양자화되기까지 한다.</p>
+
+    <p><strong>셋째, 게이지에 의존하는 $A$ 는 계산을 위한 환상일 뿐이며, 실질적인 물리 법칙은 오직 $F$ 와 그 홀로노미에만 깃들어 있다.</strong> 또한 이들 모두 시간 반전 대칭 아래에서 홀수 성질을 지니며, 각자 물리계에서 특정한 회전 방향을 규정짓는다.</p>
+
+    <p>역사적으로 패러데이, 코리올리, 베리는 서로 교류한 적이 없다. 그러나 자연은 '속도에 비례하는 한 항'이라는 동일한 수학적 문장을 이들에게 각기 다른 세 개의 언어로 받아 적게 했다. 전자기학의 학자들은 그것을 자기력이라 불렀고, 고전 역학의 학자들은 코리올리 힘이라 칭했으며, 양자역학의 학자들은 기하학적 위상이라 명명했다. 미분 형식이라는 언어로 쓰인 다섯 줄의 수식은 이 세 가지 번역본이 결국 하나의 원문에서 비롯되었음을 증명하는 로제타석이다.</p>
+
+    <p>그리고 이 원문의 해석은 지금도 계속해서 확장되고 있다. 비가환 게이지장(양-밀스 이론)은 $A$ 를 행렬의 차원으로 끌어올린 동일한 서사이며, 위상 물질의 천 수(Chern number)와 천-사이먼스(Chern-Simons) 항은 홀로노미를 정수로 단단하게 굳혀낸 결말이고, 사냐크 자이로스코프와 한레 자력계는 그 위상과 세차 운동을 정밀한 계측의 도구로 벼려낸 눈부신 응용이다. 라그랑지안에 슬그머니 끼어든 이 속도 1차항 하나야말로, 자연계에서 '옆으로 휘어지는' 모든 현상을 집필한 비밀스러운 저자였던 것이다.</p>
+
+    <div class="end-rule"></div>
+    <p class="endnote">
+      <span class="mark">콜로폰.</span> 본문은 수학적 핵심 구조를 선명하게 드러내기 위해 평탄 계량(flat metric)과 시간에 무관한 퍼텐셜 $A_i$ 를 가정하여 서술되었다. 일반 계량, 시간 의존 퍼텐셜, 혹은 상대론적 4차원 시공간으로 논의를 확장하더라도 $F=dA$, 일반화된 스토크스 정리, 그리고 게이지 불변이라는 중심 골격은 흔들림 없이 유지되며, 오직 외적 표기만이 3차원 공간의 특권으로 남게 된다. 식 (12)와 (17)의 부호 및 계수는 각각 로렌츠 힘과 코리올리 힘의 표준 형태와 대조하여 엄밀하게 교차 검증되었다. — <span class="mark">물리학 통합 노트</span>
+    </p>
+  </section>
+
+</div>
+</body>
+</html>

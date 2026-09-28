@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>HTML Medias</title>
+<link rel="icon" href="data:,">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { min-height: 100%; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    background: #fafafa;
+    color: #222;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    overflow-y: auto;
+  }
+  header {
+    padding: 20px 28px 14px;
+    border-bottom: 1px solid #e5e5e5;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .header-text { min-width: 0; }
+  h1 {
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .subtitle {
+    font-size: 12px;
+    color: #888;
+    margin-top: 4px;
+  }
+  .view-toggle {
+    display: flex;
+    gap: 4px;
+    background: #ececec;
+    padding: 3px;
+    border-radius: 8px;
+    flex-shrink: 0;
+  }
+  .view-toggle button {
+    background: transparent;
+    border: none;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #555;
+    font-family: inherit;
+  }
+  .view-toggle button.active {
+    background: #fff;
+    color: #222;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+
+  /* ===== MEDIA VIEW ===== */
+  .media-view { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+  body[data-view="docs"] .media-view { display: none; }
+
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 10px;
+    padding: 16px 28px;
+    overflow-y: auto;
+    max-height: 35vh;
+    flex-shrink: 0;
+    border-bottom: 1px solid #e5e5e5;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    user-select: none;
+  }
+  .card:hover {
+    border-color: #888;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .card.active {
+    border-color: #222;
+    background: #f0f0f0;
+  }
+  .card .num {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px;
+    color: #999;
+    letter-spacing: 0.04em;
+  }
+  .card .title {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.3;
+  }
+  .viewer {
+    flex: none;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+    height: 100vh;
+    min-height: 680px;
+  }
+  .viewer.closed {
+    height: 160px;
+    min-height: 160px;
+  }
+  iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+  .empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #b0b0b0;
+    font-size: 13px;
+    pointer-events: none;
+  }
+  .empty.hidden { display: none; }
+
+  /* ===== DOCS VIEW ===== */
+  .docs-view {
+    display: none;
+    flex: 1;
+    min-height: 0;
+    height: calc(100vh - 64px);
+  }
+  body[data-view="docs"] .docs-view { display: flex; }
+
+  .docs-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: #f4f4f4;
+    border-right: 1px solid #e5e5e5;
+    display: flex;
+    flex-direction: column;
+    transition: width 0.2s ease;
+    overflow: hidden;
+  }
+  .docs-sidebar.collapsed { width: 44px; }
+
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e5e5;
+    flex-shrink: 0;
+  }
+  .sidebar-title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #777;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .docs-sidebar.collapsed .sidebar-title { display: none; }
+  .sidebar-toggle {
+    background: transparent;
+    border: 1px solid #d0d0d0;
+    width: 24px;
+    height: 24px;
+    border-radius: 5px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+  .sidebar-toggle:hover { background: #fff; border-color: #888; }
+
+  .docs-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+  }
+  .docs-sidebar.collapsed .docs-list { display: none; }
+
+  .doc-item {
+    padding: 8px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 2px;
+    transition: background 0.1s ease;
+  }
+  .doc-item:hover { background: #e8e8e8; }
+  .doc-item.active { background: #222; color: #fff; }
+  .doc-title {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.35;
+    word-break: keep-all;
+  }
+
+  .docs-main {
+    flex: 1;
+    min-width: 0;
+    background: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .docs-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #b0b0b0;
+    font-size: 13px;
+    pointer-events: none;
+  }
+  .docs-empty.hidden { display: none; }
+</style>
+</head>
+<body data-view="media">
+  <header>
+    <div class="header-text">
+      <h1>HTML Medias</h1>
+      <div class="subtitle" id="subtitle">Click a card to view in the panel below.</div>
+    </div>
+    <div class="view-toggle" id="viewToggle">
+      <button data-view="media" class="active">Media</button>
+      <button data-view="docs">Docs</button>
+    </div>
+  </header>
+
+  <!-- ===== MEDIA VIEW ===== -->
+  <div class="media-view">
+    <div class="cards" id="cards">
+      <!-- MEDIA LIST -->
+      <div class="card" data-src="media/004-rotating-frame-top.html">
+        <span class="num">004</span>
+        <span class="title">회전계에서의 팽이</span>
+      </div>
+      <div class="card" data-src="media/003-field-equation-cone.html">
+        <span class="num">003</span>
+        <span class="title">장 방정식의 Wick 원뿔</span>
+      </div>
+      <div class="card" data-src="media/002-lagrangian-one-form.html">
+        <span class="num">002</span>
+        <span class="title">Lagrangian 1-form Curvature</span>
+      </div>
+      <div class="card" data-src="media/001-etalon-alignment-ppt.html">
+        <span class="num">001</span>
+        <span class="title">Etalon Alignment PPT</span>
+      </div>
+      <!-- New cards go above this line. Format:
+      <div class="card" data-src="media/001-name.html">
+        <span class="num">001</span>
+        <span class="title">Display Title</span>
+      </div>
+      -->
+    </div>
+
+    <div class="viewer closed" id="viewer">
+      <div class="empty" id="empty">No media selected.</div>
+      <iframe id="frame" title="Interactive media viewer"></iframe>
+    </div>
+  </div>
+
+  <!-- ===== DOCS VIEW ===== -->
+  <div class="docs-view">
+    <aside class="docs-sidebar" id="docsSidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Documents</span>
+        <button class="sidebar-toggle" id="sidebarToggle" title="Collapse sidebar" aria-label="Toggle sidebar">‹</button>
+      </div>
+      <div class="docs-list" id="docsList">
+        <!-- DOCS LIST -->
+        <div class="doc-item" data-src="docs/velocity_linear_lagrangian_v3.html">
+          <span class="doc-title">속도에 비례하는 한 항 — L₁ = Aᵢq̇ⁱ 의 지형</span>
+        </div>
+        <!-- New docs go above this line. Format:
+        <div class="doc-item" data-src="docs/some-doc.html">
+          <span class="doc-title">Display Title</span>
+        </div>
+        -->
+      </div>
+    </aside>
+    <main class="docs-main" id="docsMain">
+      <div class="docs-empty" id="docsEmpty">No document selected.</div>
+      <iframe id="docsFrame" title="Document viewer"></iframe>
+    </main>
+  </div>
+
+  <script>
+    /* ===== View toggle ===== */
+    const body = document.body;
+    const viewToggle = document.getElementById('viewToggle');
+    const subtitle = document.getElementById('subtitle');
+    const SUBTITLES = {
+      media: 'Click a card to view in the panel below.',
+      docs:  'Pick a document from the sidebar.',
+    };
+
+    viewToggle.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-view]');
+      if (!btn) return;
+      const view = btn.dataset.view;
+      body.dataset.view = view;
+      subtitle.textContent = SUBTITLES[view] || '';
+      viewToggle.querySelectorAll('button').forEach(b => {
+        b.classList.toggle('active', b.dataset.view === view);
+      });
+    });
+
+    /* ===== Media view ===== */
+    const cardsEl = document.getElementById('cards');
+    const frame = document.getElementById('frame');
+    const empty = document.getElementById('empty');
+    const viewer = document.getElementById('viewer');
+
+    cardsEl.addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if (!card) return;
+
+      if (card.classList.contains('active')) {
+        card.classList.remove('active');
+        frame.removeAttribute('src');
+        viewer.style.height = '';
+        viewer.classList.add('closed');
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      frame.src = card.dataset.src;
+      viewer.classList.remove('closed');
+      empty.classList.add('hidden');
+      viewer.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    });
+
+    function resizeFrameToContent() {
+      if (!frame.getAttribute('src')) return;
+      try {
+        const doc = frame.contentDocument;
+        if (!doc) return;
+        const mediaRoot = doc.querySelector('.app');
+        const height = Math.max(
+          mediaRoot ? mediaRoot.scrollHeight : 0,
+          doc.documentElement.scrollHeight,
+          doc.body ? doc.body.scrollHeight : 0,
+          680
+        );
+        setViewerHeight(height);
+      } catch (_) {
+        viewer.style.height = '';
+      }
+    }
+
+    function setViewerHeight(height) {
+      const next = Math.ceil(Math.max(Number(height) || 0, 680));
+      const current = Math.round(viewer.getBoundingClientRect().height);
+      if (Math.abs(next - current) <= 2) return;
+      viewer.style.height = `${next}px`;
+    }
+
+    window.addEventListener('message', (event) => {
+      if (event.source !== frame.contentWindow) return;
+      const data = event.data;
+      if (!data || data.type !== 'interactive-media-height') return;
+      setViewerHeight(data.height);
+    });
+
+    frame.addEventListener('load', () => {
+      frame.focus();
+      try {
+        frame.contentWindow.focus();
+      } catch (_) {
+        /* Same-origin file access can vary by browser. Frame focus still helps. */
+      }
+      resizeFrameToContent();
+      setTimeout(resizeFrameToContent, 250);
+      setTimeout(resizeFrameToContent, 900);
+    });
+
+    window.addEventListener('resize', resizeFrameToContent);
+
+    /* ===== Docs view ===== */
+    const docsList = document.getElementById('docsList');
+    const docsFrame = document.getElementById('docsFrame');
+    const docsEmpty = document.getElementById('docsEmpty');
+    const docsSidebar = document.getElementById('docsSidebar');
+    const sidebarToggle = document.getElementById('sidebarToggle');
+
+    docsList.addEventListener('click', (e) => {
+      const item = e.target.closest('.doc-item');
+      if (!item) return;
+
+      if (item.classList.contains('active')) return;
+
+      docsList.querySelectorAll('.doc-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      docsFrame.src = item.dataset.src;
+      docsEmpty.classList.add('hidden');
+    });
+
+    sidebarToggle.addEventListener('click', () => {
+      const collapsed = docsSidebar.classList.toggle('collapsed');
+      sidebarToggle.textContent = collapsed ? '›' : '‹';
+      sidebarToggle.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+    });
+
+    docsFrame.addEventListener('load', () => {
+      try { docsFrame.contentWindow.focus(); } catch (_) {}
+    });
+  </script>
+</body>
+</html>

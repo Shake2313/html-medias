@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lagrangian 1-form Curvature</title>
+<script>
+  if (window.parent !== window) {
+    document.documentElement.classList.add('embedded');
+  }
+</script>
+<style>
+  :root {
+    --ink: #20242b;
+    --muted: #68717b;
+    --line: #d7dde2;
+    --paper: #fbfcfb;
+    --panel: #ffffff;
+    --soft: #eef3f2;
+    --teal: #0f8b8d;
+    --teal-dark: #096467;
+    --coral: #de5a4c;
+    --amber: #c7891c;
+    --slate: #384250;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+  }
+
+  body {
+    min-height: 100vh;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    letter-spacing: 0;
+    overflow: auto;
+  }
+
+  html.embedded,
+  html.embedded body {
+    height: auto;
+  }
+
+  html.embedded body {
+    overflow: hidden;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+
+  .app {
+    width: 100%;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto minmax(420px, 1fr) auto;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,0.86), rgba(245,248,247,0.92));
+  }
+
+  html.embedded .app {
+    min-height: 0;
+    grid-template-rows: auto auto auto;
+  }
+
+  html.embedded .stage {
+    min-height: 620px;
+  }
+
+  .header {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 18px;
+    align-items: end;
+    padding: 18px 22px 14px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(20px, 2.3vw, 31px);
+    line-height: 1.08;
+    font-weight: 760;
+    letter-spacing: 0;
+  }
+
+  .subline {
+    margin: 7px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.42;
+  }
+
+  .readout-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(86px, 1fr));
+    gap: 8px;
+    min-width: min(470px, 50vw);
+  }
+
+  .metric {
+    min-height: 56px;
+    padding: 9px 10px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.9);
+  }
+
+  .metric-label {
+    display: block;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.1;
+    margin-bottom: 8px;
+    white-space: nowrap;
+  }
+
+  .metric-value {
+    display: block;
+    color: var(--ink);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 17px;
+    line-height: 1;
+    font-weight: 780;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .metric-value.teal {
+    color: var(--teal-dark);
+  }
+
+  .metric-value.coral {
+    color: var(--coral);
+  }
+
+  .workbench {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 336px;
+  }
+
+  .stage {
+    position: relative;
+    min-width: 0;
+    min-height: 360px;
+    background:
+      linear-gradient(180deg, #ffffff 0%, #f7faf9 100%);
+    overflow: hidden;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+  }
+
+  .legend {
+    position: absolute;
+    left: 16px;
+    bottom: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: calc(100% - 32px);
+    pointer-events: none;
+  }
+
+  .legend-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 26px;
+    padding: 5px 8px;
+    border: 1px solid rgba(215,221,226,0.9);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.86);
+    color: var(--slate);
+    font-size: 12px;
+    line-height: 1;
+  }
+
+  .swatch {
+    width: 18px;
+    height: 4px;
+    border-radius: 999px;
+    background: var(--teal);
+  }
+
+  .swatch.force {
+    background: var(--coral);
+  }
+
+  .swatch.alpha {
+    background: var(--amber);
+  }
+
+  .swatch.ghost {
+    background: #9aa4ae;
+  }
+
+  .panel {
+    min-width: 0;
+    border-left: 1px solid var(--line);
+    background: rgba(255,255,255,0.86);
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    overflow-y: auto;
+  }
+
+  .panel-section {
+    padding: 15px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .panel-section:last-child {
+    border-bottom: 0;
+  }
+
+  .section-title {
+    margin: 0 0 9px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 760;
+    text-transform: uppercase;
+    line-height: 1;
+  }
+
+  .segmented {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--soft);
+  }
+
+  .segmented button {
+    min-height: 34px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 680;
+    cursor: pointer;
+  }
+
+  .segmented button.active {
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: 0 1px 2px rgba(32,36,43,0.08);
+  }
+
+  .mapping {
+    display: grid;
+    gap: 8px;
+  }
+
+  .mapping-row {
+    display: grid;
+    grid-template-columns: 76px minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+    min-height: 24px;
+  }
+
+  .mapping-label {
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .mapping-value {
+    color: var(--ink);
+    font-size: 13px;
+    line-height: 1.35;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+  }
+
+  .mapping-value .math-text {
+    color: var(--muted);
+    margin-left: 5px;
+  }
+
+  .math-text {
+    color: var(--muted);
+    font-size: 0.95em;
+  }
+
+  .control-grid {
+    display: grid;
+    gap: 14px;
+  }
+
+  .control {
+    display: grid;
+    gap: 7px;
+  }
+
+  .control.is-disabled {
+    opacity: 0.56;
+  }
+
+  .control-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1;
+  }
+
+  .control-head strong {
+    color: var(--ink);
+    font-weight: 690;
+  }
+
+  .control-head span {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  input[type="range"] {
+    width: 100%;
+    accent-color: var(--teal);
+  }
+
+  input[type="range"]:disabled {
+    cursor: not-allowed;
+  }
+
+  .action-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .tool-button {
+    min-height: 36px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--panel);
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .tool-button:hover {
+    border-color: #aeb8c1;
+  }
+
+  .equations {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px 18px 16px;
+    border-top: 1px solid var(--line);
+    background: #ffffff;
+  }
+
+  .derivation {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 0.78fr);
+    gap: 12px 20px;
+    align-items: start;
+  }
+
+  .derivation-flow {
+    min-width: 0;
+    display: grid;
+    gap: 9px;
+  }
+
+  .formula-block {
+    min-width: 0;
+    display: grid;
+    gap: 5px;
+    font-size: clamp(12px, 1.25vw, 16px);
+    line-height: 1.18;
+    color: #20242b;
+  }
+
+  .derivation-step {
+    min-width: 0;
+    padding: 9px 11px 10px;
+    border: 1px solid var(--line);
+    border-left-width: 5px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.76);
+  }
+
+  .alpha-step {
+    border-left-color: var(--amber);
+  }
+
+  .curvature-step {
+    border-left-color: var(--teal);
+  }
+
+  .force-step {
+    border-left-color: var(--coral);
+  }
+
+  .loop-step {
+    border-left-color: var(--slate);
+  }
+
+  .step-kicker {
+    margin: 0 0 5px;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 780;
+    line-height: 1;
+    text-transform: uppercase;
+  }
+
+  .explain {
+    margin: 0;
+    color: var(--slate);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .term {
+    font-weight: 800;
+  }
+
+  .term.alpha {
+    color: var(--amber);
+  }
+
+  .term.curvature {
+    color: var(--teal-dark);
+  }
+
+  .term.force {
+    color: var(--coral);
+  }
+
+  .term.loop {
+    color: var(--slate);
+  }
+
+  .formula-line {
+    min-height: 20px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+  }
+
+  math {
+    font-family: "Cambria Math", "STIX Two Math", "Latin Modern Math", "Times New Roman", serif;
+    math-style: normal;
+  }
+
+  .metric-label math,
+  .mapping-value math,
+  .dictionary math {
+    font-size: 1.05em;
+  }
+
+  .dictionary {
+    display: grid;
+    align-content: center;
+    gap: 4px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .dictionary strong {
+    color: var(--ink);
+  }
+
+  .derivation-table-wrap {
+    min-width: 0;
+    overflow-x: auto;
+  }
+
+  .derivation-table {
+    width: 100%;
+    min-width: 940px;
+    border-collapse: collapse;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .derivation-table caption {
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 760;
+    text-align: left;
+    text-transform: uppercase;
+    padding-bottom: 7px;
+  }
+
+  .derivation-table th,
+  .derivation-table td {
+    border: 1px solid var(--line);
+    padding: 7px 8px;
+    text-align: left;
+    vertical-align: top;
+    background: rgba(255,255,255,0.72);
+  }
+
+  .derivation-table th {
+    color: var(--muted);
+    font-weight: 760;
+    background: var(--soft);
+  }
+
+  .derivation-table th.alpha-col,
+  .derivation-table td.alpha-cell {
+    border-top-color: rgba(199,137,28,0.72);
+  }
+
+  .derivation-table th.curvature-col,
+  .derivation-table td.curvature-cell {
+    border-top-color: rgba(15,139,141,0.72);
+  }
+
+  .derivation-table th.effect-col,
+  .derivation-table td.effect-cell {
+    border-top-color: rgba(222,90,76,0.72);
+  }
+
+  .derivation-table th.alpha-col {
+    color: #8a5b0f;
+    background: rgba(199,137,28,0.12);
+  }
+
+  .derivation-table th.curvature-col {
+    color: var(--teal-dark);
+    background: rgba(15,139,141,0.11);
+  }
+
+  .derivation-table th.effect-col {
+    color: var(--coral);
+    background: rgba(222,90,76,0.1);
+  }
+
+  .derivation-table td:first-child {
+    color: var(--ink);
+    font-weight: 720;
+    white-space: nowrap;
+  }
+
+  .derivation-table math {
+    font-size: 1.05em;
+  }
+
+  .vector-table {
+    margin-top: 14px;
+  }
+
+  @media (max-width: 980px) {
+    body {
+      overflow: auto;
+    }
+
+    .app {
+      height: auto;
+      min-height: 100vh;
+    }
+
+    .header {
+      grid-template-columns: 1fr;
+    }
+
+    .readout-grid {
+      min-width: 0;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .workbench {
+      grid-template-columns: 1fr;
+    }
+
+    .stage {
+      min-height: 430px;
+    }
+
+    html.embedded .stage {
+      min-height: 430px;
+    }
+
+    .panel {
+      border-left: 0;
+      border-top: 1px solid var(--line);
+      grid-template-rows: none;
+    }
+
+    .equations {
+      grid-template-columns: 1fr;
+    }
+
+    .derivation {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .header {
+      padding: 15px 14px 12px;
+    }
+
+    .workbench {
+      min-height: 0;
+    }
+
+    .stage {
+      min-height: 390px;
+    }
+
+    html.embedded .stage {
+      min-height: 390px;
+    }
+
+    .legend {
+      left: 10px;
+      right: 10px;
+      bottom: 10px;
+    }
+
+    .readout-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .segmented {
+      grid-auto-flow: row;
+      grid-auto-rows: 34px;
+    }
+
+    .action-row {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="header">
+    <div>
+      <h1>속도 1차 라그랑지안 항: connection 1-form and curvature 2-form</h1>
+      <p class="subline">모든 문맥을 일반 좌표 q<sup>i</sup> 위의 𝓐와 𝓕=d𝓐로 읽는다.</p>
+    </div>
+    <div class="readout-grid" aria-label="numerical readouts">
+      <div class="metric">
+        <span class="metric-label">
+          <math>
+            <mrow><mi mathvariant="script">F</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo><mo>=</mo><mi>d</mi><mi mathvariant="script">A</mi></mrow>
+          </math>
+        </span>
+        <span class="metric-value teal" id="curvatureRead">0.000</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">
+          <math>
+            <mrow><mo>|</mo><msub><mi mathvariant="script">F</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msup><mover><mi>q</mi><mo>.</mo></mover><mi>j</mi></msup><mo>|</mo></mrow>
+          </math>
+        </span>
+        <span class="metric-value coral" id="forceRead">0.000</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">
+          <math>
+            <mrow><msub><mo>&oint;</mo><mi>&gamma;</mi></msub><mi mathvariant="script">A</mi></mrow>
+          </math>
+        </span>
+        <span class="metric-value" id="lineRead">0.000</span>
+      </div>
+      <div class="metric">
+        <span class="metric-label">
+          <math>
+            <mrow><msub><mo>&int;</mo><mi>&Sigma;</mi></msub><mi mathvariant="script">F</mi></mrow>
+          </math>
+        </span>
+        <span class="metric-value" id="fluxRead">0.000</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="workbench">
+    <section class="stage" aria-label="curvature field and particle motion">
+      <canvas id="fieldCanvas"></canvas>
+      <div class="legend">
+        <span class="legend-item"><span class="swatch"></span>trajectory</span>
+        <span class="legend-item"><span class="swatch force"></span><math><mrow><msub><mi mathvariant="script">F</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><msup><mover><mi>q</mi><mo>.</mo></mover><mi>j</mi></msup></mrow></math></span>
+        <span class="legend-item"><span class="swatch alpha"></span><math><mrow><mi mathvariant="script">A</mi></mrow></math> field</span>
+        <span class="legend-item"><span class="swatch ghost"></span>c=0</span>
+      </div>
+    </section>
+
+    <aside class="panel">
+      <section class="panel-section">
+        <p class="section-title">Dictionary</p>
+        <div class="segmented" id="domainTabs">
+          <button type="button" class="active" data-domain="em">EM</button>
+          <button type="button" data-domain="coriolis">Coriolis</button>
+          <button type="button" data-domain="berry">Berry</button>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <p class="section-title" id="domainTitle">전자기학</p>
+        <div class="mapping" id="mapping"></div>
+      </section>
+
+      <section class="panel-section">
+        <p class="section-title">Controls</p>
+        <div class="control-grid">
+          <div class="control">
+            <div class="control-head">
+              <strong>Mode</strong>
+              <span id="modeLabel">trajectory</span>
+            </div>
+            <div class="segmented" id="modeTabs">
+              <button type="button" class="active" data-mode="trajectory">trajectory</button>
+              <button type="button" data-mode="holonomy">holonomy</button>
+            </div>
+          </div>
+
+          <div class="control">
+            <div class="control-head">
+              <strong>Curvature profile</strong>
+              <span id="profileLabel">flux tube</span>
+            </div>
+            <div class="segmented" id="profileTabs">
+              <button type="button" data-profile="uniform">uniform</button>
+              <button type="button" class="active" data-profile="tube">flux tube</button>
+              <button type="button" data-profile="berry">avoided</button>
+            </div>
+          </div>
+
+          <label class="control">
+            <span class="control-head">
+              <strong>linear coefficient c</strong>
+              <span id="couplingValue">0.80</span>
+            </span>
+            <input id="coupling" type="range" min="-2" max="2" value="0.8" step="0.01">
+          </label>
+
+          <label class="control">
+            <span class="control-head">
+              <strong>speed |qdot|</strong>
+              <span id="speedValue">0.38</span>
+            </span>
+            <input id="speed" type="range" min="0.18" max="1.8" value="0.38" step="0.01">
+          </label>
+
+          <label class="control" id="scaleControl">
+            <span class="control-head">
+              <strong>local scale a</strong>
+              <span id="scaleValue">0.50</span>
+            </span>
+            <input id="scale" type="range" min="0.18" max="0.82" value="0.5" step="0.01">
+          </label>
+
+          <div class="action-row">
+            <button class="tool-button" id="resetParticle" type="button">reset particle</button>
+            <button class="tool-button" id="resetLoop" type="button">reset loop</button>
+          </div>
+        </div>
+      </section>
+    </aside>
+  </main>
+
+  <footer class="equations">
+    <div class="derivation" aria-label="derivation and dictionary">
+      <div class="derivation-flow">
+        <section class="derivation-step alpha-step">
+          <p class="step-kicker">Step 1 · velocity expansion</p>
+          <p class="explain">라그랑지안을 속도에 대해 전개한다. 여기서 <span class="term alpha">𝓐<sub>i</sub>(q) qdot<sup>i</sup></span>는 일반 좌표공간 위의 connection 1-form이고, 색으로는 canvas의 amber 화살표와 대응한다.</p>
+          <div class="formula-block">
+            <div class="formula-line">
+              <math display="block">
+                <mrow>
+                  <mi>L</mi><mo stretchy="false">(</mo><mi>q</mi><mo>,</mo><mover><mi>q</mi><mo>.</mo></mover><mo stretchy="false">)</mo>
+                  <mo>=</mo><mo>-</mo><mi>V</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo>
+                  <mo>+</mo>
+                  <mstyle mathcolor="#c7891c" mathvariant="bold">
+                    <mrow>
+                      <msub><mi mathvariant="script">A</mi><mi>i</mi></msub><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo>
+                      <msup><mover><mi>q</mi><mo>.</mo></mover><mi>i</mi></msup>
+                    </mrow>
+                  </mstyle>
+                  <mo>+</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msub><mi>g</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo>
+                  <msup><mover><mi>q</mi><mo>.</mo></mover><mi>i</mi></msup><msup><mover><mi>q</mi><mo>.</mo></mover><mi>j</mi></msup>
+                  <mo>+</mo><mi>O</mi><mo stretchy="false">(</mo><msup><mrow><mo>|</mo><mover><mi>q</mi><mo>.</mo></mover><mo>|</mo></mrow><mn>3</mn></msup><mo stretchy="false">)</mo>
+                </mrow>
+              </math>
+            </div>
+            <div class="formula-line">
+              <math display="block">
+                <mstyle mathcolor="#c7891c" mathvariant="bold">
+                  <mrow><mi mathvariant="script">A</mi><mo>=</mo><msub><mi mathvariant="script">A</mi><mi>i</mi></msub><mi>d</mi><msup><mi>q</mi><mi>i</mi></msup></mrow>
+                </mstyle>
+              </math>
+            </div>
+          </div>
+        </section>
+
+        <section class="derivation-step curvature-step">
+          <p class="step-kicker">Step 2 · gauge-invariant remnant</p>
+          <p class="explain">Euler-Lagrange 식에 대입해 정리하면, connection <span class="term alpha">𝓐</span>는 exterior derivative를 통해 <span class="term curvature">curvature 𝓕=d𝓐</span>로 들어간다. 이 2-form field strength가 국소 동역학을 결정한다.</p>
+          <div class="formula-block">
+            <div class="formula-line">
+              <math display="block">
+                <mrow>
+                  <mstyle mathcolor="#0f8b8d" mathvariant="bold"><mrow><mi mathvariant="script">F</mi><mo>=</mo><mi>d</mi><mi mathvariant="script">A</mi></mrow></mstyle>
+                  <mo>=</mo>
+                  <mfrac><mn>1</mn><mn>2</mn></mfrac>
+                  <mo stretchy="false">(</mo>
+                  <msub><mo>&part;</mo><mi>i</mi></msub><msub><mi mathvariant="script">A</mi><mi>j</mi></msub>
+                  <mo>-</mo>
+                  <msub><mo>&part;</mo><mi>j</mi></msub><msub><mi mathvariant="script">A</mi><mi>i</mi></msub>
+                  <mo stretchy="false">)</mo>
+                  <mi>d</mi><msup><mi>q</mi><mi>i</mi></msup><mo>&wedge;</mo><mi>d</mi><msup><mi>q</mi><mi>j</mi></msup>
+                </mrow>
+              </math>
+            </div>
+          </div>
+        </section>
+
+        <section class="derivation-step force-step">
+          <p class="step-kicker">Step 3 · local response</p>
+          <p class="explain">국소적으로는 <span class="term curvature">curvature 𝓕</span>에 속도를 끼워 넣은 <span class="term force">contraction</span>이 힘이 된다. 같은 구조가 힘으로 보이면 f<sub>i</sub>=𝓕<sub>ij</sub>qdot<sup>j</sup>, 위상으로 보이면 ∮𝓐가 된다.</p>
+          <div class="formula-block">
+            <div class="formula-line">
+              <math display="block">
+                <mrow>
+                  <mi>g</mi><mo stretchy="false">(</mo><msub><mi>&nabla;</mi><mover><mi>q</mi><mo>.</mo></mover></msub><mover><mi>q</mi><mo>.</mo></mover><mo>,</mo><mo>&middot;</mo><mo stretchy="false">)</mo>
+                  <mo>=</mo><mo>-</mo><mi>d</mi><mi>V</mi><mo>+</mo>
+                  <mstyle mathcolor="#de5a4c" mathvariant="bold">
+                    <mrow><msub><mi>&iota;</mi><mover><mi>q</mi><mo>.</mo></mover></msub><mi mathvariant="script">F</mi></mrow>
+                  </mstyle>
+                </mrow>
+              </math>
+            </div>
+            <div class="formula-line">
+              <math display="block">
+                <mrow>
+                  <mstyle mathcolor="#de5a4c" mathvariant="bold">
+                    <mrow>
+                      <msub><mi>G</mi><mi mathvariant="script">A</mi></msub>
+                      <mo>=</mo><msub><mi mathvariant="script">F</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub>
+                      <msup><mover><mi>q</mi><mo>.</mo></mover><mi>j</mi></msup>
+                      <mi>d</mi><msup><mi>q</mi><mi>i</mi></msup>
+                    </mrow>
+                  </mstyle>
+                </mrow>
+              </math>
+            </div>
+          </div>
+        </section>
+
+        <section class="derivation-step loop-step">
+          <p class="step-kicker">Step 4 · global response</p>
+          <p class="explain">전역적으로는 같은 항이 작용의 선적분이 된다. 닫힌 경로에서는 Stokes 정리 때문에 <span class="term loop">holonomy</span>가 내부 flux와 같아진다.</p>
+          <div class="formula-block">
+            <div class="formula-line">
+              <math display="block">
+                <mrow>
+                  <mi>&Delta;</mi><msub><mi>S</mi><mi mathvariant="script">A</mi></msub>
+                  <mo>=</mo><msub><mo>&int;</mo><mi>&gamma;</mi></msub><mi mathvariant="script">A</mi>
+                  <mo>,</mo><mspace width="1.2em"></mspace>
+                  <mstyle mathcolor="#384250" mathvariant="bold">
+                    <mrow>
+                      <msub><mo>&oint;</mo><mi>&gamma;</mi></msub><mi mathvariant="script">A</mi>
+                      <mo>=</mo><msub><mo>&int;</mo><mi>&Sigma;</mi></msub><mi mathvariant="script">F</mi>
+                    </mrow>
+                  </mstyle>
+                </mrow>
+              </math>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="derivation-table-wrap">
+        <table class="derivation-table">
+          <caption>표 1. q<sup>i</sup> 위의 𝓐와 𝓕로 통일한 미분형식 구조</caption>
+          <thead>
+            <tr>
+              <th>문맥과 좌표</th>
+              <th class="alpha-col">Connection 1-form</th>
+              <th class="curvature-col">Curvature 2-form</th>
+              <th class="effect-col">Geometric response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>일반 구조<br><span class="math-text">q<sup>i</sup></span></td>
+              <td class="alpha-cell"><math><mstyle mathcolor="#c7891c" mathvariant="bold"><mrow><mi mathvariant="script">A</mi><mo>=</mo><msub><mi mathvariant="script">A</mi><mi>i</mi></msub><mi>d</mi><msup><mi>q</mi><mi>i</mi></msup></mrow></mstyle></math></td>
+              <td class="curvature-cell"><math><mstyle mathcolor="#0f8b8d" mathvariant="bold"><mrow><mi mathvariant="script">F</mi><mo>=</mo><mi>d</mi><mi mathvariant="script">A</mi><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msub><mi mathvariant="script">F</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mi>d</mi><msup><mi>q</mi><mi>i</mi></msup><mo>&wedge;</mo><mi>d</mi><msup><mi>q</mi><mi>j</mi></msup></mrow></mstyle></math></td>
+              <td class="effect-cell"><math><mrow><msub><mi>&iota;</mi><mover><mi>q</mi><mo>.</mo></mover></msub><mi mathvariant="script">F</mi></mrow></math><span class="math-text"> local force</span><br><math><mrow><msub><mo>&oint;</mo><mi>&gamma;</mi></msub><mi mathvariant="script">A</mi><mo>=</mo><msub><mo>&int;</mo><mi>&Sigma;</mi></msub><mi mathvariant="script">F</mi></mrow></math><span class="math-text"> holonomy</span></td>
+            </tr>
+            <tr>
+              <td>전자기학<br><span class="math-text">q<sup>i</sup>=x<sup>i</sup></span></td>
+              <td class="alpha-cell"><math><mstyle mathcolor="#c7891c" mathvariant="bold"><mrow><msub><mi mathvariant="script">A</mi><mi>EM</mi></msub><mo>=</mo><mi>e</mi><msub><mi>A</mi><mi>i</mi></msub><mi>d</mi><msup><mi>x</mi><mi>i</mi></msup></mrow></mstyle></math></td>
+              <td class="curvature-cell"><math><mstyle mathcolor="#0f8b8d" mathvariant="bold"><mrow><msub><mi mathvariant="script">F</mi><mi>EM</mi></msub><mo>=</mo><mfrac><mi>e</mi><mn>2</mn></mfrac><msub><mi>F</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mi>d</mi><msup><mi>x</mi><mi>i</mi></msup><mo>&wedge;</mo><mi>d</mi><msup><mi>x</mi><mi>j</mi></msup></mrow></mstyle></math></td>
+              <td class="effect-cell"><math><mrow><msub><mrow><mo stretchy="false">(</mo><msub><mi mathvariant="script">F</mi><mi>EM</mi></msub><mo stretchy="false">)</mo></mrow><mrow><mi>i</mi><mi>j</mi></mrow></msub><msup><mover><mi>x</mi><mo>.</mo></mover><mi>j</mi></msup><mi>d</mi><msup><mi>x</mi><mi>i</mi></msup></mrow></math><span class="math-text"> Lorentz</span><br><math><mrow><msub><mo>&oint;</mo><mi>&gamma;</mi></msub><msub><mi mathvariant="script">A</mi><mi>EM</mi></msub></mrow></math><span class="math-text"> Aharonov-Bohm</span></td>
+            </tr>
+            <tr>
+              <td>회전계<br><span class="math-text">q<sup>i</sup>=x<sup>i</sup></span></td>
+              <td class="alpha-cell"><math><mstyle mathcolor="#c7891c" mathvariant="bold"><mrow><msub><mi mathvariant="script">A</mi><mi>Rot</mi></msub><mo>=</mo><mi>m</mi><msub><mrow><mo stretchy="false">(</mo><mi>&Omega;</mi><mo>&times;</mo><mi>r</mi><mo stretchy="false">)</mo></mrow><mi>i</mi></msub><mi>d</mi><msup><mi>x</mi><mi>i</mi></msup></mrow></mstyle></math></td>
+              <td class="curvature-cell"><math><mstyle mathcolor="#0f8b8d" mathvariant="bold"><mrow><msub><mi mathvariant="script">F</mi><mi>Rot</mi></msub><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false">(</mo><mn>2</mn><mi>m</mi><msub><mi>&epsilon;</mi><mrow><mi>i</mi><mi>j</mi><mi>k</mi></mrow></msub><msup><mi>&Omega;</mi><mi>k</mi></msup><mo stretchy="false">)</mo><mi>d</mi><msup><mi>x</mi><mi>i</mi></msup><mo>&wedge;</mo><mi>d</mi><msup><mi>x</mi><mi>j</mi></msup></mrow></mstyle></math><br><span class="math-text">plane: 2mΩ dx∧dy</span></td>
+              <td class="effect-cell"><math><mrow><msub><mrow><mo stretchy="false">(</mo><msub><mi mathvariant="script">F</mi><mi>Rot</mi></msub><mo stretchy="false">)</mo></mrow><mrow><mi>i</mi><mi>j</mi></mrow></msub><msup><mover><mi>x</mi><mo>.</mo></mover><mi>j</mi></msup><mi>d</mi><msup><mi>x</mi><mi>i</mi></msup></mrow></math><span class="math-text"> Coriolis</span><br><math><mrow><msub><mo>&oint;</mo><mi>&gamma;</mi></msub><msub><mi mathvariant="script">A</mi><mi>Rot</mi></msub></mrow></math><span class="math-text"> Sagnac</span></td>
+            </tr>
+            <tr>
+              <td>Berry phase<br><span class="math-text">q<sup>i</sup>=R<sup>i</sup></span></td>
+              <td class="alpha-cell"><math><mstyle mathcolor="#c7891c" mathvariant="bold"><mrow><msub><mi mathvariant="script">A</mi><mi>B</mi></msub><mo>=</mo><mi>i</mi><mo>&#10216;</mo><mi>n</mi><mo>|</mo><msub><mo>&part;</mo><mi>i</mi></msub><mi>n</mi><mo>&#10217;</mo><mi>d</mi><msup><mi>R</mi><mi>i</mi></msup></mrow></mstyle></math></td>
+              <td class="curvature-cell"><math><mstyle mathcolor="#0f8b8d" mathvariant="bold"><mrow><msub><mi mathvariant="script">F</mi><mi>B</mi></msub><mo>=</mo><mi>d</mi><msub><mi mathvariant="script">A</mi><mi>B</mi></msub><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msubsup><mi mathvariant="script">F</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>B</mi></msubsup><mi>d</mi><msup><mi>R</mi><mi>i</mi></msup><mo>&wedge;</mo><mi>d</mi><msup><mi>R</mi><mi>j</mi></msup></mrow></mstyle></math></td>
+              <td class="effect-cell"><math><mstyle mathcolor="#384250" mathvariant="bold"><mrow><msub><mi>&gamma;</mi><mi>B</mi></msub><mo>=</mo><msub><mo>&oint;</mo><mi>&gamma;</mi></msub><msub><mi mathvariant="script">A</mi><mi>B</mi></msub><mo>=</mo><msub><mo>&int;</mo><mi>&Sigma;</mi></msub><msub><mi mathvariant="script">F</mi><mi>B</mi></msub></mrow></mstyle></math><span class="math-text"> adiabatic holonomy</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <table class="derivation-table vector-table">
+          <caption>표 2. 3차원에서는: 벡터 미적분학 표기</caption>
+          <thead>
+            <tr>
+              <th>문맥</th>
+              <th class="alpha-col">Vector potential</th>
+              <th class="curvature-col">Curl field</th>
+              <th class="effect-col">Vector response</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>일반 3D</td>
+              <td class="alpha-cell"><math><mrow><mi mathvariant="script">A</mi><mo>=</mo><mi mathvariant="bold">A</mi><mo stretchy="false">(</mo><mi>q</mi><mo stretchy="false">)</mo><mo>&middot;</mo><mi>d</mi><mi mathvariant="bold">q</mi></mrow></math></td>
+              <td class="curvature-cell"><math><mrow><mi mathvariant="bold">B</mi><mo>=</mo><mi>&nabla;</mi><mo>&times;</mo><mi mathvariant="bold">A</mi></mrow></math><br><span class="math-text">𝓕 ↔ B · dS</span></td>
+              <td class="effect-cell"><math><mrow><mi mathvariant="bold">f</mi><mo>=</mo><mover><mi mathvariant="bold">q</mi><mo>.</mo></mover><mo>&times;</mo><mi mathvariant="bold">B</mi></mrow></math><br><math><mrow><msub><mo>&oint;</mo><mi>&gamma;</mi></msub><mi mathvariant="bold">A</mi><mo>&middot;</mo><mi>d</mi><mi mathvariant="bold">q</mi><mo>=</mo><msub><mo>&int;</mo><mi>&Sigma;</mi></msub><mi mathvariant="bold">B</mi><mo>&middot;</mo><mi>d</mi><mi mathvariant="bold">S</mi></mrow></math></td>
+            </tr>
+            <tr>
+              <td>전자기학</td>
+              <td class="alpha-cell"><math><mrow><msub><mi mathvariant="bold">A</mi><mi>EM</mi></msub><mo>=</mo><mi>e</mi><mi mathvariant="bold">A</mi></mrow></math></td>
+              <td class="curvature-cell"><math><mrow><msub><mi mathvariant="bold">B</mi><mi>EM</mi></msub><mo>=</mo><mi>&nabla;</mi><mo>&times;</mo><msub><mi mathvariant="bold">A</mi><mi>EM</mi></msub><mo>=</mo><mi>e</mi><mi mathvariant="bold">B</mi></mrow></math></td>
+              <td class="effect-cell"><math><mrow><mi mathvariant="bold">f</mi><mo>=</mo><mi>e</mi><mi mathvariant="bold">v</mi><mo>&times;</mo><mi mathvariant="bold">B</mi></mrow></math><span class="math-text"> Lorentz</span><br><math><mrow><msub><mo>&oint;</mo><mi>&gamma;</mi></msub><mi>e</mi><mi mathvariant="bold">A</mi><mo>&middot;</mo><mi>d</mi><mi mathvariant="bold">r</mi></mrow></math><span class="math-text"> Aharonov-Bohm</span></td>
+            </tr>
+            <tr>
+              <td>회전계</td>
+              <td class="alpha-cell"><math><mrow><msub><mi mathvariant="bold">A</mi><mi>Rot</mi></msub><mo>=</mo><mi>m</mi><mo stretchy="false">(</mo><mi mathvariant="bold">&Omega;</mi><mo>&times;</mo><mi mathvariant="bold">r</mi><mo stretchy="false">)</mo></mrow></math></td>
+              <td class="curvature-cell"><math><mrow><msub><mi mathvariant="bold">B</mi><mi>Rot</mi></msub><mo>=</mo><mi>&nabla;</mi><mo>&times;</mo><msub><mi mathvariant="bold">A</mi><mi>Rot</mi></msub><mo>=</mo><mn>2</mn><mi>m</mi><mi mathvariant="bold">&Omega;</mi></mrow></math></td>
+              <td class="effect-cell"><math><mrow><mi mathvariant="bold">f</mi><mo>=</mo><mi mathvariant="bold">v</mi><mo>&times;</mo><mo stretchy="false">(</mo><mn>2</mn><mi>m</mi><mi mathvariant="bold">&Omega;</mi><mo stretchy="false">)</mo></mrow></math><span class="math-text"> Coriolis</span><br><math><mrow><msub><mo>&oint;</mo><mi>&gamma;</mi></msub><mi>m</mi><mo stretchy="false">(</mo><mi mathvariant="bold">&Omega;</mi><mo>&times;</mo><mi mathvariant="bold">r</mi><mo stretchy="false">)</mo><mo>&middot;</mo><mi>d</mi><mi mathvariant="bold">r</mi></mrow></math><span class="math-text"> Sagnac</span></td>
+            </tr>
+            <tr>
+              <td>Berry phase</td>
+              <td class="alpha-cell"><math><mrow><msub><mi mathvariant="bold">A</mi><mi>B</mi></msub><mo stretchy="false">(</mo><mi mathvariant="bold">R</mi><mo stretchy="false">)</mo><mo>=</mo><mi>i</mi><mo>&#10216;</mo><mi>n</mi><mo>|</mo><msub><mi>&nabla;</mi><mi>R</mi></msub><mi>n</mi><mo>&#10217;</mo></mrow></math></td>
+              <td class="curvature-cell"><math><mrow><msub><mi mathvariant="bold">B</mi><mi>B</mi></msub><mo>=</mo><msub><mi>&nabla;</mi><mi>R</mi></msub><mo>&times;</mo><msub><mi mathvariant="bold">A</mi><mi>B</mi></msub></mrow></math><br><span class="math-text">Berry curvature vector</span></td>
+              <td class="effect-cell"><math><mrow><msub><mi>&gamma;</mi><mi>B</mi></msub><mo>=</mo><msub><mo>&oint;</mo><mi>&gamma;</mi></msub><msub><mi mathvariant="bold">A</mi><mi>B</mi></msub><mo>&middot;</mo><mi>d</mi><mi mathvariant="bold">R</mi><mo>=</mo><msub><mo>&int;</mo><mi>&Sigma;</mi></msub><msub><mi mathvariant="bold">B</mi><mi>B</mi></msub><mo>&middot;</mo><mi>d</mi><mi mathvariant="bold">S</mi></mrow></math></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </footer>
+</div>
+
+<script>
+(() => {
+  const canvas = document.getElementById('fieldCanvas');
+  const ctx = canvas.getContext('2d');
+  const heat = document.createElement('canvas');
+  const heatCtx = heat.getContext('2d');
+
+  const state = {
+    domain: 'em',
+    mode: 'trajectory',
+    profile: 'tube',
+    coupling: 0.8,
+    speed: 0.38,
+    scale: 0.5,
+    width: 1,
+    height: 1,
+    dpr: 1,
+    particle: null,
+    ghost: null,
+    path: [],
+    ghostPath: [],
+    loop: [],
+    drawing: false,
+    heatDirty: true,
+    lastTime: performance.now()
+  };
+
+  const mappings = {
+    em: {
+      title: '전자기학',
+      rows: [
+        ['coordinate', '<math><mrow><msup><mi>q</mi><mi>i</mi></msup><mo>=</mo><msup><mi>x</mi><mi>i</mi></msup></mrow></math><span class="math-text">real space</span>'],
+        ['connection', '<math><mrow><msub><mi mathvariant="script">A</mi><mi>EM</mi></msub><mo>=</mo><mi>e</mi><msub><mi>A</mi><mi>i</mi></msub><mo stretchy="false">(</mo><mi>x</mi><mo stretchy="false">)</mo><mi>d</mi><msup><mi>x</mi><mi>i</mi></msup></mrow></math>'],
+        ['curvature', '<math><mrow><msub><mi mathvariant="script">F</mi><mi>EM</mi></msub><mo>=</mo><mfrac><mi>e</mi><mn>2</mn></mfrac><msub><mi>F</mi><mrow><mi>i</mi><mi>j</mi></mrow></msub><mi>d</mi><msup><mi>x</mi><mi>i</mi></msup><mo>&wedge;</mo><mi>d</mi><msup><mi>x</mi><mi>j</mi></msup></mrow></math>'],
+        ['local', '<math><mrow><msub><mrow><mo stretchy="false">(</mo><msub><mi mathvariant="script">F</mi><mi>EM</mi></msub><mo stretchy="false">)</mo></mrow><mrow><mi>i</mi><mi>j</mi></mrow></msub><msup><mover><mi>x</mi><mo>.</mo></mover><mi>j</mi></msup><mi>d</mi><msup><mi>x</mi><mi>i</mi></msup></mrow></math><span class="math-text">Lorentz</span>'],
+        ['global', '<math><mrow><msub><mo>&oint;</mo><mi>&gamma;</mi></msub><msub><mi mathvariant="script">A</mi><mi>EM</mi></msub></mrow></math><span class="math-text">Aharonov-Bohm</span>']
+      ]
+    },
+    coriolis: {
+      title: '회전계 고전역학',
+      rows: [
+        ['coordinate', '<math><mrow><msup><mi>q</mi><mi>i</mi></msup><mo>=</mo><msup><mi>x</mi><mi>i</mi></msup></mrow></math><span class="math-text">rotating frame</span>'],
+        ['connection', '<math><mrow><msub><mi mathvariant="script">A</mi><mi>Rot</mi></msub><mo>=</mo><mi>m</mi><msub><mrow><mo stretchy="false">(</mo><mi>&Omega;</mi><mo>&times;</mo><mi>r</mi><mo stretchy="false">)</mo></mrow><mi>i</mi></msub><mi>d</mi><msup><mi>x</mi><mi>i</mi></msup></mrow></math>'],
+        ['curvature', '<math><mrow><msub><mi mathvariant="script">F</mi><mi>Rot</mi></msub><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><mo stretchy="false">(</mo><mn>2</mn><mi>m</mi><msub><mi>&epsilon;</mi><mrow><mi>i</mi><mi>j</mi><mi>k</mi></mrow></msub><msup><mi>&Omega;</mi><mi>k</mi></msup><mo stretchy="false">)</mo><mi>d</mi><msup><mi>x</mi><mi>i</mi></msup><mo>&wedge;</mo><mi>d</mi><msup><mi>x</mi><mi>j</mi></msup></mrow></math>'],
+        ['local', '<math><mrow><msub><mrow><mo stretchy="false">(</mo><msub><mi mathvariant="script">F</mi><mi>Rot</mi></msub><mo stretchy="false">)</mo></mrow><mrow><mi>i</mi><mi>j</mi></mrow></msub><msup><mover><mi>x</mi><mo>.</mo></mover><mi>j</mi></msup><mi>d</mi><msup><mi>x</mi><mi>i</mi></msup></mrow></math><span class="math-text">Coriolis</span>'],
+        ['global', '<math><mrow><msub><mo>&oint;</mo><mi>&gamma;</mi></msub><msub><mi mathvariant="script">A</mi><mi>Rot</mi></msub></mrow></math><span class="math-text">Sagnac</span>']
+      ]
+    },
+    berry: {
+      title: 'Berry 위상',
+      rows: [
+        ['coordinate', '<math><mrow><msup><mi>q</mi><mi>i</mi></msup><mo>=</mo><msup><mi>R</mi><mi>i</mi></msup></mrow></math><span class="math-text">parameter space</span>'],
+        ['connection', '<math><mrow><msub><mi mathvariant="script">A</mi><mi>B</mi></msub><mo>=</mo><mi>i</mi><mo>&#10216;</mo><mi>n</mi><mo>|</mo><msub><mo>&part;</mo><mi>i</mi></msub><mi>n</mi><mo>&#10217;</mo><mi>d</mi><msup><mi>R</mi><mi>i</mi></msup></mrow></math>'],
+        ['curvature', '<math><mrow><msub><mi mathvariant="script">F</mi><mi>B</mi></msub><mo>=</mo><mi>d</mi><msub><mi mathvariant="script">A</mi><mi>B</mi></msub><mo>=</mo><mfrac><mn>1</mn><mn>2</mn></mfrac><msubsup><mi mathvariant="script">F</mi><mrow><mi>i</mi><mi>j</mi></mrow><mi>B</mi></msubsup><mi>d</mi><msup><mi>R</mi><mi>i</mi></msup><mo>&wedge;</mo><mi>d</mi><msup><mi>R</mi><mi>j</mi></msup></mrow></math>'],
+        ['local', '<math><mrow><msub><mi>&iota;</mi><mover><mi>R</mi><mo>.</mo></mover></msub><msub><mi mathvariant="script">F</mi><mi>B</mi></msub></mrow></math><span class="math-text">adiabatic transport</span>'],
+        ['global', '<math><mrow><msub><mi>&gamma;</mi><mi>B</mi></msub><mo>=</mo><msub><mo>&oint;</mo><mi>&gamma;</mi></msub><msub><mi mathvariant="script">A</mi><mi>B</mi></msub><mo>=</mo><msub><mo>&int;</mo><mi>&Sigma;</mi></msub><msub><mi mathvariant="script">F</mi><mi>B</mi></msub></mrow></math>']
+      ]
+    }
+  };
+
+  const els = {
+    domainTabs: document.getElementById('domainTabs'),
+    modeTabs: document.getElementById('modeTabs'),
+    profileTabs: document.getElementById('profileTabs'),
+    mapping: document.getElementById('mapping'),
+    domainTitle: document.getElementById('domainTitle'),
+    modeLabel: document.getElementById('modeLabel'),
+    profileLabel: document.getElementById('profileLabel'),
+    coupling: document.getElementById('coupling'),
+    speed: document.getElementById('speed'),
+    scale: document.getElementById('scale'),
+    scaleControl: document.getElementById('scaleControl'),
+    couplingValue: document.getElementById('couplingValue'),
+    speedValue: document.getElementById('speedValue'),
+    scaleValue: document.getElementById('scaleValue'),
+    curvatureRead: document.getElementById('curvatureRead'),
+    forceRead: document.getElementById('forceRead'),
+    lineRead: document.getElementById('lineRead'),
+    fluxRead: document.getElementById('fluxRead'),
+    resetParticle: document.getElementById('resetParticle'),
+    resetLoop: document.getElementById('resetLoop')
+  };
+
+  function resetParticle() {
+    const angle = -0.06;
+    state.particle = {
+      x: -0.72,
+      y: -0.12,
+      vx: Math.cos(angle) * state.speed,
+      vy: Math.sin(angle) * state.speed
+    };
+    state.ghost = {
+      x: state.particle.x,
+      y: state.particle.y,
+      vx: state.particle.vx,
+      vy: state.particle.vy
+    };
+    state.path = [{ x: state.particle.x, y: state.particle.y }];
+    state.ghostPath = [{ x: state.ghost.x, y: state.ghost.y }];
+  }
+
+  function resetLoop() {
+    state.loop = [];
+    const n = 96;
+    const rx = 0.52;
+    const ry = 0.34;
+    const cx = 0.06;
+    const cy = 0.04;
+    for (let i = 0; i < n; i += 1) {
+      const t = (i / n) * Math.PI * 2;
+      state.loop.push({ x: cx + rx * Math.cos(t), y: cy + ry * Math.sin(t) });
+    }
+  }
+
+  function setSpeed(value) {
+    state.speed = Number(value);
+    const p = state.particle;
+    const g = state.ghost;
+    if (p) {
+      const mag = Math.hypot(p.vx, p.vy) || 1;
+      p.vx = (p.vx / mag) * state.speed;
+      p.vy = (p.vy / mag) * state.speed;
+    }
+    if (g) {
+      const mag = Math.hypot(g.vx, g.vy) || 1;
+      g.vx = (g.vx / mag) * state.speed;
+      g.vy = (g.vy / mag) * state.speed;
+    }
+  }
+
+  function baseCurvature(x, y) {
+    const r2 = x * x + y * y;
+    const a = state.scale;
+    if (state.profile === 'uniform') return 1;
+    if (state.profile === 'tube') return Math.exp(-r2 / (2 * a * a));
+    return Math.pow(a, 3) / Math.pow(r2 + a * a, 1.5);
+  }
+
+  function curvatureAt(x, y) {
+    return state.coupling * baseCurvature(x, y);
+  }
+
+  function alphaAt(x, y) {
+    const r = Math.hypot(x, y);
+    if (r < 1e-5) return { x: 0, y: 0 };
+    const a = state.scale;
+    let aTheta = 0;
+    if (state.profile === 'uniform') {
+      aTheta = 0.5 * state.coupling * r;
+    } else if (state.profile === 'tube') {
+      aTheta = state.coupling * a * a * (1 - Math.exp(-(r * r) / (2 * a * a))) / r;
+    } else {
+      aTheta = state.coupling * a * a * (1 - a / Math.sqrt(r * r + a * a)) / r;
+    }
+    return {
+      x: -aTheta * y / r,
+      y: aTheta * x / r
+    };
+  }
+
+  function forceAt(x, y, vx, vy) {
+    const b = curvatureAt(x, y);
+    return {
+      x: b * vy,
+      y: -b * vx
+    };
+  }
+
+  function potentialForce(x, y) {
+    const restoring = 0.06;
+    return { x: -restoring * x, y: -restoring * y };
+  }
+
+  function stepBody(body, dt, withCurvature) {
+    const k1 = acceleration(body.x, body.y, body.vx, body.vy, withCurvature);
+    body.vx += k1.x * dt;
+    body.vy += k1.y * dt;
+    body.x += body.vx * dt;
+    body.y += body.vy * dt;
+  }
+
+  function acceleration(x, y, vx, vy, withCurvature) {
+    const p = potentialForce(x, y);
+    if (!withCurvature) return p;
+    const f = forceAt(x, y, vx, vy);
+    return { x: p.x + f.x, y: p.y + f.y };
+  }
+
+  function integrate(dt) {
+    if (state.mode !== 'trajectory') return;
+    const subSteps = 4;
+    const h = Math.min(dt, 0.03) / subSteps;
+    for (let i = 0; i < subSteps; i += 1) {
+      stepBody(state.particle, h, true);
+      stepBody(state.ghost, h, false);
+    }
+    pushPoint(state.path, state.particle);
+    pushPoint(state.ghostPath, state.ghost);
+  }
+
+  function pushPoint(path, p) {
+    path.push({ x: p.x, y: p.y });
+    if (path.length > 1200) path.shift();
+  }
+
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const w = Math.max(2, Math.floor(rect.width * dpr));
+    const h = Math.max(2, Math.floor(rect.height * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+      state.width = rect.width;
+      state.height = rect.height;
+      state.dpr = dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.heatDirty = true;
+    }
+  }
+
+  function viewBounds() {
+    const pad = 26;
+    const innerW = Math.max(160, state.width - pad * 2);
+    const innerH = Math.max(160, state.height - pad * 2);
+    const yMax = 1.8;
+    const xMax = Math.max(yMax, yMax * innerW / innerH);
+    return { pad, innerW, innerH, xMax, yMax };
+  }
+
+  function toScreen(p) {
+    const bounds = viewBounds();
+    return {
+      x: bounds.pad + ((p.x + bounds.xMax) / (bounds.xMax * 2)) * bounds.innerW,
+      y: bounds.pad + ((bounds.yMax - p.y) / (bounds.yMax * 2)) * bounds.innerH,
+      scale: Math.min(bounds.innerW / (bounds.xMax * 2), bounds.innerH / (bounds.yMax * 2))
+    };
+  }
+
+  function fromScreen(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    const bounds = viewBounds();
+    return {
+      x: clamp(((x - bounds.pad) / bounds.innerW) * bounds.xMax * 2 - bounds.xMax, -bounds.xMax, bounds.xMax),
+      y: clamp(bounds.yMax - ((y - bounds.pad) / bounds.innerH) * bounds.yMax * 2, -bounds.yMax, bounds.yMax)
+    };
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
+  }
+
+  function renderHeatmap() {
+    if (!state.heatDirty) return;
+    const w = 128;
+    const h = 96;
+    const bounds = viewBounds();
+    heat.width = w;
+    heat.height = h;
+    const img = heatCtx.createImageData(w, h);
+    for (let py = 0; py < h; py += 1) {
+      for (let px = 0; px < w; px += 1) {
+        const x = (px / (w - 1)) * bounds.xMax * 2 - bounds.xMax;
+        const y = bounds.yMax - (py / (h - 1)) * bounds.yMax * 2;
+        const b = curvatureAt(x, y);
+        const c = colorForCurvature(b);
+        const i = (py * w + px) * 4;
+        img.data[i] = c[0];
+        img.data[i + 1] = c[1];
+        img.data[i + 2] = c[2];
+        img.data[i + 3] = c[3];
+      }
+    }
+    heatCtx.putImageData(img, 0, 0);
+    state.heatDirty = false;
+  }
+
+  function colorForCurvature(b) {
+    const t = Math.min(1, Math.abs(b) / 1.7);
+    const base = [247, 250, 249];
+    const pos = [15, 139, 141];
+    const neg = [222, 90, 76];
+    const target = b >= 0 ? pos : neg;
+    const mix = 0.12 + 0.58 * Math.sqrt(t);
+    return [
+      Math.round(base[0] * (1 - mix) + target[0] * mix),
+      Math.round(base[1] * (1 - mix) + target[1] * mix),
+      Math.round(base[2] * (1 - mix) + target[2] * mix),
+      190
+    ];
+  }
+
+  function draw() {
+    resize();
+    renderHeatmap();
+
+    ctx.clearRect(0, 0, state.width, state.height);
+    drawHeat();
+    drawGrid();
+    drawAlphaField();
+    drawLoop();
+    drawPaths();
+    drawParticle();
+    drawLabels();
+    updateReadouts();
+  }
+
+  function drawHeat() {
+    const bounds = viewBounds();
+    ctx.save();
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(heat, bounds.pad, bounds.pad, bounds.innerW, bounds.innerH);
+    ctx.restore();
+  }
+
+  function drawGrid() {
+    const bounds = viewBounds();
+    const origin = toScreen({ x: 0, y: 0 });
+    const left = toScreen({ x: -bounds.xMax, y: 0 });
+    const right = toScreen({ x: bounds.xMax, y: 0 });
+    const top = toScreen({ x: 0, y: bounds.yMax });
+    const bottom = toScreen({ x: 0, y: -bounds.yMax });
+    ctx.save();
+    ctx.strokeStyle = 'rgba(56,66,80,0.13)';
+    ctx.lineWidth = 1;
+    const xStart = Math.ceil(-bounds.xMax / 0.25) * 0.25;
+    const yStart = Math.ceil(-bounds.yMax / 0.25) * 0.25;
+    for (let x = xStart; x <= bounds.xMax + 0.001; x += 0.25) {
+      const x0 = toScreen({ x, y: -bounds.yMax });
+      const x1 = toScreen({ x, y: bounds.yMax });
+      line(x0.x, x0.y, x1.x, x1.y);
+    }
+    for (let y = yStart; y <= bounds.yMax + 0.001; y += 0.25) {
+      const y0 = toScreen({ x: -bounds.xMax, y });
+      const y1 = toScreen({ x: bounds.xMax, y });
+      line(y0.x, y0.y, y1.x, y1.y);
+    }
+    ctx.strokeStyle = 'rgba(32,36,43,0.28)';
+    ctx.lineWidth = 1.2;
+    line(left.x, origin.y, right.x, origin.y);
+    line(origin.x, top.y, origin.x, bottom.y);
+    ctx.restore();
+  }
+
+  function drawAlphaField() {
+    const bounds = viewBounds();
+    ctx.save();
+    ctx.lineWidth = 1.2;
+    for (let y = -bounds.yMax + 0.16; y <= bounds.yMax - 0.159; y += 0.19) {
+      for (let x = -bounds.xMax + 0.16; x <= bounds.xMax - 0.159; x += 0.19) {
+        const a = alphaAt(x, y);
+        const mag = Math.hypot(a.x, a.y);
+        if (mag < 0.004) continue;
+        const start = toScreen({ x, y });
+        const len = Math.min(22, 8 + mag * 42);
+        const ux = a.x / mag;
+        const uy = a.y / mag;
+        const end = { x: start.x + ux * len, y: start.y - uy * len };
+        const alpha = Math.min(0.72, 0.24 + mag * 1.4);
+        ctx.strokeStyle = `rgba(199,137,28,${alpha})`;
+        ctx.fillStyle = `rgba(199,137,28,${alpha})`;
+        arrow(start.x, start.y, end.x, end.y, 4.2);
+      }
+    }
+    ctx.restore();
+  }
+
+  function drawPaths() {
+    drawPath(state.ghostPath, 'rgba(104,113,123,0.34)', 1.4, true);
+    drawPath(state.path, state.coupling >= 0 ? 'rgba(15,139,141,0.95)' : 'rgba(222,90,76,0.95)', 2.8, false);
+  }
+
+  function drawPath(path, stroke, width, dashed) {
+    if (path.length < 2) return;
+    ctx.save();
+    ctx.strokeStyle = stroke;
+    ctx.lineWidth = width;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    if (dashed) ctx.setLineDash([6, 7]);
+    ctx.beginPath();
+    for (let i = 0; i < path.length; i += 1) {
+      const p = toScreen(path[i]);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawLoop() {
+    if (state.loop.length < 2) return;
+    ctx.save();
+    ctx.beginPath();
+    for (let i = 0; i < state.loop.length; i += 1) {
+      const p = toScreen(state.loop[i]);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(222,90,76,0.08)';
+    ctx.strokeStyle = state.mode === 'holonomy' ? 'rgba(222,90,76,0.96)' : 'rgba(222,90,76,0.42)';
+    ctx.lineWidth = state.mode === 'holonomy' ? 3 : 1.6;
+    ctx.fill();
+    ctx.stroke();
+
+    const n = state.loop.length;
+    const marks = [0.12, 0.37, 0.62, 0.87];
+    ctx.strokeStyle = 'rgba(222,90,76,0.92)';
+    ctx.fillStyle = 'rgba(222,90,76,0.92)';
+    for (const m of marks) {
+      const i = Math.floor(m * n) % n;
+      const j = (i + 3) % n;
+      const a = toScreen(state.loop[i]);
+      const b = toScreen(state.loop[j]);
+      arrow(a.x, a.y, b.x, b.y, 5);
+    }
+    ctx.restore();
+  }
+
+  function drawParticle() {
+    if (!state.particle) return;
+    const p = state.particle;
+    const s = toScreen(p);
+    const vEnd = { x: s.x + p.vx * 42, y: s.y - p.vy * 42 };
+    const f = forceAt(p.x, p.y, p.vx, p.vy);
+    const fEnd = { x: s.x + f.x * 42, y: s.y - f.y * 42 };
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(32,36,43,0.78)';
+    ctx.fillStyle = 'rgba(32,36,43,0.78)';
+    ctx.lineWidth = 2;
+    arrow(s.x, s.y, vEnd.x, vEnd.y, 6);
+
+    ctx.strokeStyle = 'rgba(222,90,76,0.95)';
+    ctx.fillStyle = 'rgba(222,90,76,0.95)';
+    ctx.lineWidth = 2.4;
+    arrow(s.x, s.y, fEnd.x, fEnd.y, 7);
+
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 7.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = state.coupling >= 0 ? varColor('--teal') : varColor('--coral');
+    ctx.stroke();
+
+    ctx.fillStyle = 'rgba(32,36,43,0.78)';
+    ctx.font = '12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    ctx.fillText('qdot', vEnd.x + 5, vEnd.y - 4);
+    ctx.fillStyle = 'rgba(222,90,76,0.95)';
+    ctx.fillText('G𝓐', fEnd.x + 5, fEnd.y + 12);
+    ctx.restore();
+  }
+
+  function drawLabels() {
+    const bounds = viewBounds();
+    const topLeft = toScreen({ x: -bounds.xMax + 0.08, y: bounds.yMax - 0.12 });
+    ctx.save();
+    ctx.fillStyle = 'rgba(32,36,43,0.76)';
+    ctx.font = '13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace';
+    ctx.fillText('color = curvature 𝓕=d𝓐', topLeft.x, topLeft.y);
+    const mode = state.mode === 'holonomy' ? 'γ closed: ∮𝓐 ↔ ∫𝓕' : 'trajectory: c=0 ghost vs c≠0';
+    ctx.fillText(mode, topLeft.x, topLeft.y + 20);
+    ctx.restore();
+  }
+
+  function varColor(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function line(x1, y1, x2, y2) {
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+
+  function arrow(x1, y1, x2, y2, head) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const len = Math.hypot(dx, dy);
+    if (len < 0.5) return;
+    const ux = dx / len;
+    const uy = dy / len;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - ux * head - uy * head * 0.62, y2 - uy * head + ux * head * 0.62);
+    ctx.lineTo(x2 - ux * head + uy * head * 0.62, y2 - uy * head - ux * head * 0.62);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function lineIntegral(points) {
+    if (points.length < 2) return 0;
+    let sum = 0;
+    for (let i = 0; i < points.length; i += 1) {
+      const a = points[i];
+      const b = points[(i + 1) % points.length];
+      const mid = { x: (a.x + b.x) * 0.5, y: (a.y + b.y) * 0.5 };
+      const alpha = alphaAt(mid.x, mid.y);
+      sum += alpha.x * (b.x - a.x) + alpha.y * (b.y - a.y);
+    }
+    return sum;
+  }
+
+  function fluxIntegral(points) {
+    if (points.length < 3) return 0;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    for (const p of points) {
+      minX = Math.min(minX, p.x);
+      maxX = Math.max(maxX, p.x);
+      minY = Math.min(minY, p.y);
+      maxY = Math.max(maxY, p.y);
+    }
+    const signed = signedArea(points);
+    const sign = signed >= 0 ? 1 : -1;
+    const nx = 70;
+    const ny = 70;
+    const dx = (maxX - minX) / nx;
+    const dy = (maxY - minY) / ny;
+    if (!Number.isFinite(dx) || !Number.isFinite(dy) || dx === 0 || dy === 0) return 0;
+    let sum = 0;
+    for (let iy = 0; iy < ny; iy += 1) {
+      for (let ix = 0; ix < nx; ix += 1) {
+        const x = minX + (ix + 0.5) * dx;
+        const y = minY + (iy + 0.5) * dy;
+        if (pointInPolygon({ x, y }, points)) sum += curvatureAt(x, y) * dx * dy;
+      }
+    }
+    return sign * Math.abs(sum);
+  }
+
+  function signedArea(points) {
+    let a = 0;
+    for (let i = 0; i < points.length; i += 1) {
+      const p = points[i];
+      const q = points[(i + 1) % points.length];
+      a += p.x * q.y - q.x * p.y;
+    }
+    return a * 0.5;
+  }
+
+  function pointInPolygon(point, polygon) {
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
+      const pi = polygon[i];
+      const pj = polygon[j];
+      const crosses = (pi.y > point.y) !== (pj.y > point.y);
+      if (!crosses) continue;
+      const x = ((pj.x - pi.x) * (point.y - pi.y)) / (pj.y - pi.y) + pi.x;
+      if (point.x < x) inside = !inside;
+    }
+    return inside;
+  }
+
+  function updateReadouts() {
+    const p = state.particle;
+    const b = curvatureAt(p.x, p.y);
+    const f = forceAt(p.x, p.y, p.vx, p.vy);
+    const lineValue = lineIntegral(state.loop);
+    const fluxValue = fluxIntegral(state.loop);
+    els.curvatureRead.textContent = formatNumber(b);
+    els.forceRead.textContent = formatNumber(Math.hypot(f.x, f.y));
+    els.lineRead.textContent = formatNumber(lineValue);
+    els.fluxRead.textContent = formatNumber(fluxValue);
+  }
+
+  function formatNumber(value) {
+    if (!Number.isFinite(value)) return '0.000';
+    const abs = Math.abs(value);
+    if (abs >= 100) return value.toFixed(0);
+    if (abs >= 10) return value.toFixed(1);
+    return value.toFixed(3);
+  }
+
+  function updateMapping() {
+    const data = mappings[state.domain];
+    els.domainTitle.textContent = data.title;
+    els.mapping.innerHTML = '';
+    for (const [label, value] of data.rows) {
+      const row = document.createElement('div');
+      row.className = 'mapping-row';
+      const left = document.createElement('div');
+      left.className = 'mapping-label';
+      left.textContent = label;
+      const right = document.createElement('div');
+      right.className = 'mapping-value';
+      right.innerHTML = value;
+      row.append(left, right);
+      els.mapping.append(row);
+    }
+    notifyParentHeight();
+  }
+
+  function notifyParentHeight() {
+    if (window.parent === window) return;
+    const app = document.querySelector('.app');
+    const height = app
+      ? app.scrollHeight
+      : Math.max(document.documentElement.scrollHeight, document.body ? document.body.scrollHeight : 0);
+    window.parent.postMessage({ type: 'interactive-media-height', height }, '*');
+  }
+
+  function setActive(group, attr, value) {
+    group.querySelectorAll('button').forEach((button) => {
+      button.classList.toggle('active', button.dataset[attr] === value);
+    });
+  }
+
+  function profileName(profile) {
+    if (profile === 'tube') return 'flux tube';
+    if (profile === 'berry') return 'avoided';
+    return 'uniform';
+  }
+
+  function updateScaleControl() {
+    const usesScale = state.profile !== 'uniform';
+    els.scale.disabled = !usesScale;
+    els.scaleControl.classList.toggle('is-disabled', !usesScale);
+    els.scaleValue.textContent = usesScale ? state.scale.toFixed(2) : 'not used';
+  }
+
+  els.domainTabs.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-domain]');
+    if (!button) return;
+    state.domain = button.dataset.domain;
+    setActive(els.domainTabs, 'domain', state.domain);
+    updateMapping();
+  });
+
+  els.modeTabs.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-mode]');
+    if (!button) return;
+    state.mode = button.dataset.mode;
+    setActive(els.modeTabs, 'mode', state.mode);
+    els.modeLabel.textContent = state.mode;
+  });
+
+  els.profileTabs.addEventListener('click', (event) => {
+    const button = event.target.closest('button[data-profile]');
+    if (!button) return;
+    state.profile = button.dataset.profile;
+    setActive(els.profileTabs, 'profile', state.profile);
+    els.profileLabel.textContent = profileName(state.profile);
+    updateScaleControl();
+    state.heatDirty = true;
+  });
+
+  els.coupling.addEventListener('input', () => {
+    state.coupling = Number(els.coupling.value);
+    els.couplingValue.textContent = state.coupling.toFixed(2);
+    state.heatDirty = true;
+  });
+
+  els.speed.addEventListener('input', () => {
+    setSpeed(els.speed.value);
+    els.speedValue.textContent = state.speed.toFixed(2);
+  });
+
+  els.scale.addEventListener('input', () => {
+    state.scale = Number(els.scale.value);
+    updateScaleControl();
+    state.heatDirty = true;
+  });
+
+  window.addEventListener('resize', notifyParentHeight);
+
+  els.resetParticle.addEventListener('click', resetParticle);
+  els.resetLoop.addEventListener('click', resetLoop);
+
+  canvas.addEventListener('pointerdown', (event) => {
+    if (state.mode !== 'holonomy') return;
+    canvas.setPointerCapture(event.pointerId);
+    state.drawing = true;
+    state.loop = [fromScreen(event.clientX, event.clientY)];
+  });
+
+  canvas.addEventListener('pointermove', (event) => {
+    if (!state.drawing || state.mode !== 'holonomy') return;
+    const p = fromScreen(event.clientX, event.clientY);
+    const last = state.loop[state.loop.length - 1];
+    if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 0.012) {
+      state.loop.push(p);
+    }
+  });
+
+  canvas.addEventListener('pointerup', (event) => {
+    if (!state.drawing) return;
+    state.drawing = false;
+    try {
+      canvas.releasePointerCapture(event.pointerId);
+    } catch (_) {
+      /* Pointer capture can be absent after iframe focus changes. */
+    }
+    if (state.loop.length < 3) resetLoop();
+  });
+
+  function loop(now) {
+    const dt = (now - state.lastTime) / 1000;
+    state.lastTime = now;
+    integrate(dt);
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  resetParticle();
+  resetLoop();
+  updateMapping();
+  setActive(els.profileTabs, 'profile', state.profile);
+  els.profileLabel.textContent = profileName(state.profile);
+  els.couplingValue.textContent = state.coupling.toFixed(2);
+  els.speedValue.textContent = state.speed.toFixed(2);
+  updateScaleControl();
+  notifyParentHeight();
+  setTimeout(notifyParentHeight, 300);
+  setTimeout(notifyParentHeight, 900);
+  requestAnimationFrame(loop);
+})();
+</script>
+</body>
+</html>
